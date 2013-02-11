@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Client", "Client", "{D23D0129-4A3F-445E-8E34-486BA3F1EB49}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client\Client\Client.csproj", "{139D5EE0-BFFF-4830-8517-1EEF4E05755F}"
@@ -9,24 +9,22 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ClientProtocol", "Client\Cl
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "HttpPrototypeSetup", "HttpPrototypeSetup\HttpPrototypeSetup.vdproj", "{D99D51E6-6D95-45F9-82DE-E4AEB7430EC4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Server", "Server", "{C374FCAA-990B-4595-990B-35756DC3D81B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server\Server.csproj", "{6771B061-37A9-40DE-9E70-84CEDC930B29}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerProtocol", "Server\ServerProtocol\ServerProtocol.csproj", "{D7D6C1EB-016E-491F-806A-5BFEC806179D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServerOwinMiddleware", "Server\ServerOwinMiddleware\ServerOwinMiddleware.csproj", "{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{B37172EC-B64A-40F3-B67F-C328EB8A4F6C}"
+	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
+		.nuget\NuGet.exe = .nuget\NuGet.exe
+		.nuget\NuGet.targets = .nuget\NuGet.targets
+	EndProjectSection
+EndProject
 Global
-	GlobalSection(TeamFoundationVersionControl) = preSolution
-		SccNumberOfProjects = 4
-		SccEnterpriseProvider = {4CA58AB2-18FA-4F8D-95D4-32DDF27D184C}
-		SccTeamFoundationServer = http://tfs1:8085/tfs/interop%20team%20projects
-		SccLocalPath0 = .
-		SccProjectUniqueName1 = Client\\Client\\Client\\Client.csproj
-		SccProjectTopLevelParentUniqueName1 = Http2Demo.sln
-		SccProjectName1 = Client/Client/Client
-		SccLocalPath1 = Client\\Client\\Client
-		SccProjectUniqueName2 = HttpPrototypeSetup\\HttpPrototypeSetup.vdproj
-		SccProjectName2 = HttpPrototypeSetup
-		SccLocalPath2 = HttpPrototypeSetup
-		SccProjectUniqueName3 = Client\\ClientProtocol\\ClientProtocol.csproj
-		SccProjectTopLevelParentUniqueName3 = Http2Demo.sln
-		SccProjectName3 = Client/ClientProtocol
-		SccLocalPath3 = Client\\ClientProtocol
-	EndGlobalSection
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = SMDemoAll.vsmdi
 	EndGlobalSection
@@ -65,6 +63,36 @@ Global
 		{D99D51E6-6D95-45F9-82DE-E4AEB7430EC4}.Release|Any CPU.ActiveCfg = Release
 		{D99D51E6-6D95-45F9-82DE-E4AEB7430EC4}.Release|Mixed Platforms.ActiveCfg = Release
 		{D99D51E6-6D95-45F9-82DE-E4AEB7430EC4}.Release|x86.ActiveCfg = Release
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{6771B061-37A9-40DE-9E70-84CEDC930B29}.Release|x86.ActiveCfg = Release|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D}.Release|x86.ActiveCfg = Release|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -72,5 +100,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{139D5EE0-BFFF-4830-8517-1EEF4E05755F} = {D23D0129-4A3F-445E-8E34-486BA3F1EB49}
 		{59F1A0D5-BB8C-4637-B891-A84A606E59E6} = {D23D0129-4A3F-445E-8E34-486BA3F1EB49}
+		{6771B061-37A9-40DE-9E70-84CEDC930B29} = {C374FCAA-990B-4595-990B-35756DC3D81B}
+		{D7D6C1EB-016E-491F-806A-5BFEC806179D} = {C374FCAA-990B-4595-990B-35756DC3D81B}
+		{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F} = {C374FCAA-990B-4595-990B-35756DC3D81B}
 	EndGlobalSection
 EndGlobal
