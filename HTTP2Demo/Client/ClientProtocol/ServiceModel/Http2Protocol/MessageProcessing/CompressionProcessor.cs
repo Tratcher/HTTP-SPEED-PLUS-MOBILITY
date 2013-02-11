@@ -37,7 +37,7 @@ namespace ClientProtocol.ServiceModel.Http2Protocol.MessageProcessing
 	using System.ServiceModel.Http2Protocol;
 	using System;
     using ClientProtocol.ServiceModel.Http2Protocol.ProtocolFrames;
-	using ComponentAce.Compression.Libs.zlib;
+	using zlib;
 	using System.IO;
     using System.Text;
 

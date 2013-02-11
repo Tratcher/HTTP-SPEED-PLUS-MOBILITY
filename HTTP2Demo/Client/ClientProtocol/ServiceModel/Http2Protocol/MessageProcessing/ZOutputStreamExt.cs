@@ -35,7 +35,7 @@
 namespace ClientProtocol.ServiceModel.Http2Protocol.MessageProcessing
 {
 	using System.IO;
-	using ComponentAce.Compression.Libs.zlib;
+	using zlib;
 
 	/// <summary>
 	/// ZStream with dictionary support.

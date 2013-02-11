@@ -78,9 +78,12 @@ namespace System.ServiceModel.Http2Protocol
             {
                 string request = string.Format(
                             "GET {0} HTTP/1.1\r\n"
+                            + "Host: {1}:{2}\r\n"
                             + "Upgrade: HTTP/2.0\r\n"
                             + "Connection: Upgrade\r\n",
-                            uri);
+                            uri.PathAndQuery,
+                            uri.Host,
+                            uri.Port);
 
                 request += "\r\n";
 
