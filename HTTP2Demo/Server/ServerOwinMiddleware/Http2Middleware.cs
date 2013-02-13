@@ -5,14 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Owin.Types;
+using System.Security.Cryptography.X509Certificates;
+using ServerProtocol;
 
 namespace ServerOwinMiddleware
 {
     using AppFunc = Func<IDictionary<string, object>, Task>;
-    using OpaqueUpgrade = Action<IDictionary<string, object>, Func<IDictionary<string, object>, Task>>;
-    using OpaqueFunc = Func<IDictionary<string, object>, Task>;
-    using Owin.Types;
-    using System.Security.Cryptography.X509Certificates;
 
     // Http-01/2.0 uses a similar upgrade handshake to WebSockets. This middleware answers upgrade requests
     // using the Opaque Upgrade OWIN extension and then switches the pipeline to HTTP/2.0 binary framing.
@@ -40,15 +39,11 @@ namespace ServerOwinMiddleware
             SetHttp2UpgradeHeadersAndStatusCode(owinResponse);
             Http2Session session = await CreateUpgradeSessionAsync(owinRequest);
 
-            OpaqueUpgrade upgradeFunc = (OpaqueUpgrade)environment["opaque.Upgrade"];
-            upgradeFunc(null, opaqueEnv =>
-                {
-                    // TODO: Get an updated version of Microsoft.Owin.Host.HttpSys that implements Opaque 0.3.
-                    // HttpSys 0.1 implements Opaque 0.2 where there are separate input and output opaque streams.
-
-                    // Assign the opaque stream to the session and initiate session operation.
-                    return session.Start((Stream)opaqueEnv["opaque.Stream"], (CancellationToken)opaqueEnv["opaque.CallCancelled"]);
-                });
+            owinRequest.Upgrade(opaque =>
+            {
+                // Assign the opaque stream to the session and initiate session operation.
+                return session.Start(opaque.Stream, opaque.CallCancelled);
+            });
 
             // Officially we need to unwind the original request before continuing the opaque upgrade.
             // (In reality our callback will be invoked immediately.)
@@ -99,7 +94,19 @@ namespace ServerOwinMiddleware
             }
 
             // The opaque stream and CancellationToken will be provided after the opaque upgrade.
-            return new Http2Session(_next, clientCert, CopyHandshakeRequest(owinRequest));
+            return new Http2Session(_next, CreateTransportInfo(clientCert, owinRequest), CopyHandshakeRequest(owinRequest));
+        }
+
+        private TransportInformation CreateTransportInfo(X509Certificate clientCert, OwinRequest owinRequest)
+        {
+            return new TransportInformation()
+            {
+                ClientCertificate = clientCert,
+                RemoteIpAddress = owinRequest.RemoteIpAddress,
+                RemotePort = owinRequest.RemotePort,
+                LocalIpAddress = owinRequest.LocalIpAddress,
+                LocalPort = owinRequest.LocalPort,
+            };
         }
 
         // Make a copy of the handshake request. The original environment will be out of scope
@@ -117,11 +124,6 @@ namespace ServerOwinMiddleware
                 "owin.RequestQueryString",
                 "owin.RequestProtocol",
 
-                "server.RemoteIpAddress",
-                "server.RemotePort",
-                "server.LocalIpAddress",
-                "server.LocalPort",
-                "server.IsLocal",
                 // "server.Capabilities", This middleware will become the new server, so the original server capabilities aren't relevant.
             };
 

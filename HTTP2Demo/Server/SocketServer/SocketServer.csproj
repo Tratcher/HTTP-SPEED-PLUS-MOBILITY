@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{AE3E0DF3-1E7E-4D8D-9780-78D3D1CE436F}</ProjectGuid>
+    <ProjectGuid>{658C0A0D-A624-4532-AFF0-180EC5ED7887}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ServerOwinMiddleware</RootNamespace>
-    <AssemblyName>ServerOwinMiddleware</AssemblyName>
+    <RootNamespace>SocketServer</RootNamespace>
+    <AssemblyName>SocketServer</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
@@ -32,11 +32,8 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Owin">
-      <HintPath>..\..\packages\Owin.1.0\lib\net40\Owin.dll</HintPath>
-    </Reference>
     <Reference Include="Owin.Types">
-      <HintPath>..\..\packages\Owin.Types.0.7.1-alpha\lib\net40\Owin.Types.dll</HintPath>
+      <HintPath>..\..\packages\Owin.Types.0.8.3-alpha\lib\net40\Owin.Types.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -47,8 +44,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Http2Extensions.cs" />
-    <Compile Include="Http2Middleware.cs" />
+    <Compile Include="DictionaryExtensions.cs" />
+    <Compile Include="Http2SocketServer.cs" />
+    <Compile Include="OwinServerFactoryAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
