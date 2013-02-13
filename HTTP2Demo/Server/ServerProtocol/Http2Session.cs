@@ -10,7 +10,8 @@ using System.Threading.Tasks;
 
 namespace ServerProtocol
 {
-    using AppFunc = Func<IDictionary<string, object>, Task>;
+    using System.Collections.Concurrent;
+using AppFunc = Func<IDictionary<string, object>, Task>;
 
     public class Http2Session
     {
@@ -21,6 +22,7 @@ namespace ServerProtocol
         private CancellationToken _cancel;
         private TransportInformation _transportInfo;
         private bool _goAwayReceived;
+        private ConcurrentDictionary<int, Http2Stream> _activeStreams;
 
         public Http2Session(AppFunc next, TransportInformation transportInfo, IDictionary<string, object> upgradeRequest = null)
         {
@@ -30,6 +32,7 @@ namespace ServerProtocol
             _clientCerts[0] = _transportInfo.ClientCertificate;
             _upgradeRequest = upgradeRequest;
             _goAwayReceived = false;
+            _activeStreams = new ConcurrentDictionary<int, Http2Stream>();
         }
 
         public Task Start(Stream stream, CancellationToken cancel)
@@ -41,7 +44,7 @@ namespace ServerProtocol
             // Dispatch the original upgrade stream via _next;
             if (_upgradeRequest != null)
             {
-                // TODO:
+                DispatchInitialRequest();
             }
 
             // Listen for incoming Http/2.0 frames
@@ -51,6 +54,29 @@ namespace ServerProtocol
 
             // Complete the returned task only at the end of the session.  The connection will be terminated.
             return Task.WhenAll(incomingTask, outgoingTask);
+        }
+
+        private void DispatchInitialRequest()
+        {
+            Http2Stream stream = new Http2Stream(1, _transportInfo, _upgradeRequest, _cancel);
+            _activeStreams[stream.Id] = stream;
+
+            // GC the original
+            _upgradeRequest = null;
+
+            Task.Run(() => _next(stream.Environment))
+                .ContinueWith(task =>
+                {
+                    CompleteResponse(stream.Id, task);
+                });
+        }
+
+        // Send the response headers if they haven't been, and signal the end of the response.
+        // Note the request may not have finished yet.
+        private void CompleteResponse(int id, Task appFuncTask)
+        {
+            // TODO: Should this happen inside of the Http2Stream?
+            throw new NotImplementedException();
         }
 
         // Read HTTP/2.0 frames from the raw stream and dispatch them to the appropriate virtual streams for processing.
