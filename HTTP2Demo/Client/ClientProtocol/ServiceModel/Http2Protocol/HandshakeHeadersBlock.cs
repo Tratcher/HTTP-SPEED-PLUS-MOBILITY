@@ -136,7 +136,7 @@ namespace System.ServiceModel.Http2Protocol
                     {
                         if (!header.StartsWith("http", StringComparison.OrdinalIgnoreCase))
                         {
-                            throw new ProtocolExeption("Server responce is not recognized", StatusCode.ProtocolError);
+                            throw new ProtocolExeption("Server response is not recognized", StatusCode.ProtocolError);
                         }
                     }
 

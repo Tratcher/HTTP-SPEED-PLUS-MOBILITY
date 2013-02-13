@@ -324,7 +324,7 @@ namespace System.ServiceModel.Http2Protocol
                         StreamDataEventArgs args = (StreamDataEventArgs)e;
                         this.OnDataReceived(this, e as StreamDataEventArgs);
 
-                        //TODO incomment when server will be able to handle windowUpdate
+                        //TODO uncomment when server will be able to handle windowUpdate
                         /*if (Session.IsFlowControlEnabled)
                         {
                             CurrentWindowBalanceFromServer -= args.Data.Data.Length;
