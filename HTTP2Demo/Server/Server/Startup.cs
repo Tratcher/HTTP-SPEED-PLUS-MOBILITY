@@ -16,6 +16,16 @@ namespace Server
     {
         public void Configuration(IAppBuilder builder)
         {
+            /* // Debugging a TypeLoadException
+            builder.Use(new Func<AppFunc, AppFunc>(next =>
+                {
+                    return env =>
+                    {
+                        return next(env);
+                    };
+                }));
+            */
+
             builder.UseHttp2();
             builder.Use(new Func<AppFunc, AppFunc>(ignoredNextApp => (AppFunc)Invoke));
         }
@@ -24,14 +34,15 @@ namespace Server
         public Task Invoke(IDictionary<string, object> environment)
         {
             OwinResponse owinResponse = new OwinResponse(environment);
-
+            /*
 	        string responseText = "Hello World";
 	        byte[] responseBytes = Encoding.UTF8.GetBytes(responseText);
-	  
-	        owinResponse.SetHeader("Content-Length", responseBytes.Length.ToString(CultureInfo.InvariantCulture));
-            owinResponse.SetHeader("Content-Type", "text/plain");
+	  */
+	        // owinResponse.SetHeader("Content-Length", responseBytes.Length.ToString(CultureInfo.InvariantCulture));
+            // owinResponse.SetHeader("Content-Type", "text/plain");
 
-            return owinResponse.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            // return owinResponse.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            return Task.FromResult<object>(null);
         }
     }
 }

@@ -25,6 +25,7 @@ using AppFunc = Func<IDictionary<string, object>, Task>;
         private bool _goAwayReceived;
         private ConcurrentDictionary<int, Http2Stream> _activeStreams;
         private FrameReader _reader;
+        private WriteQueue _writeQueue;
 
         public Http2Session(AppFunc next, TransportInformation transportInfo, IDictionary<string, object> upgradeRequest = null)
         {
@@ -41,8 +42,9 @@ using AppFunc = Func<IDictionary<string, object>, Task>;
         {
             Contract.Assert(_rawStream == null, "Start called more than once");
             _rawStream = stream;
-            _reader = new FrameReader(_rawStream, _cancel);
             _cancel = cancel;
+            _writeQueue = new WriteQueue(_rawStream);
+            _reader = new FrameReader(_rawStream, _cancel);
 
             // Dispatch the original upgrade stream via _next;
             if (_upgradeRequest != null)
@@ -61,7 +63,7 @@ using AppFunc = Func<IDictionary<string, object>, Task>;
 
         private void DispatchInitialRequest()
         {
-            Http2Stream stream = new Http2Stream(1, _transportInfo, _upgradeRequest, _cancel);
+            Http2Stream stream = new Http2Stream(1, _transportInfo, _upgradeRequest, _writeQueue, _cancel);
 
             // GC the original
             _upgradeRequest = null;
@@ -72,7 +74,7 @@ using AppFunc = Func<IDictionary<string, object>, Task>;
         private void DispatchNewStream(int id, Http2Stream stream)
         {
             _activeStreams[id] = stream;
-            Task.Run(() => stream.Start(_next))
+            Task.Run(() => stream.Run(_next))
                 .ContinueWith(task =>
                 {
                     CompleteResponse(stream.Id, task);
@@ -83,7 +85,7 @@ using AppFunc = Func<IDictionary<string, object>, Task>;
         private void CompleteResponse(int id, Task appFuncTask)
         {
             // TODO: Should this happen inside of the Http2Stream?
-            throw new NotImplementedException();
+            // throw new NotImplementedException();
         }
 
         // Read HTTP/2.0 frames from the raw stream and dispatch them to the appropriate virtual streams for processing.
@@ -105,9 +107,9 @@ using AppFunc = Func<IDictionary<string, object>, Task>;
                     // New incoming request stream
                     case ControlFrameType.SynStream:
                         SynFrame synFrame = (SynFrame)frame;
-                        Http2Stream stream = new Http2Stream(synFrame, _transportInfo, _cancel);
+                        Http2Stream stream = new Http2Stream(synFrame, _transportInfo, _writeQueue, _cancel);
                         DispatchNewStream(synFrame.StreamId, stream);
-                        break;
+                        return;
 
                     default:
                         throw new NotImplementedException("Cannot dispatch frame type: " + frame.FrameType);
@@ -125,6 +127,7 @@ using AppFunc = Func<IDictionary<string, object>, Task>;
                 {
                     stream.ReceiveRequestData((DataFrame)frame);
                 }
+                return;
             }
             throw new NotImplementedException();
         }
@@ -132,7 +135,7 @@ using AppFunc = Func<IDictionary<string, object>, Task>;
         // Manage the outgoing queue of requests.
         private Task PumpOutgoingData()
         {
-            throw new NotImplementedException();
+            return _writeQueue.PumpToStreamAsync();
         }
     }
 }

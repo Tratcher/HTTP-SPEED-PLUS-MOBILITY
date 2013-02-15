@@ -32,7 +32,7 @@ namespace ServerProtocol.Framing
             Frame wholeFrame = GetFrameType(preamble);
             await FillAsync(wholeFrame.Buffer, Constants.FramePreambleSize, wholeFrame.Buffer.Length - Constants.FramePreambleSize, _cancel);
 
-            return preamble;
+            return wholeFrame;
         }
 
         private Frame GetFrameType(Frame preamble)

@@ -42,10 +42,17 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="zlib.net">
+      <HintPath>..\..\packages\zlib.net.1.0.4.0\lib\zlib.net.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Compression\CompressionDictionary.cs" />
+    <Compile Include="Compression\CompressionProcessor.cs" />
+    <Compile Include="Compression\ZOutputStreamExt.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Framing\DataFrame.cs" />
+    <Compile Include="Framing\FrameFlags.cs" />
     <Compile Include="Framing\Frame.cs" />
     <Compile Include="Framing\FrameHelpers.cs" />
     <Compile Include="Framing\FrameReader.cs" />

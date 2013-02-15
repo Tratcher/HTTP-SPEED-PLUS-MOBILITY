@@ -36,18 +36,11 @@ namespace ServerProtocol.Framing
         {
             get
             {
-                return ((0x80 & _buffer[0]) == 0x80);
+                return FrameHelpers.GetHighBitAt(_buffer, 0);
             }
             set
             {
-                if (value)
-                {
-                    _buffer[0] |= 0x80;
-                }
-                else
-                {
-                    _buffer[0] &= 0x7F;
-                }
+                FrameHelpers.SetHighBitAt(_buffer, 0, value);
             }
         }
 
@@ -69,13 +62,11 @@ namespace ServerProtocol.Framing
         {
             get
             {
-                int highByte = (_buffer[0] & 0x7F);
-                return (highByte << 8) | _buffer[1];
+                return FrameHelpers.Get15BitsAt(_buffer, 0);
             }
             set
             {
-                _buffer[0] |= (byte)(value >> 8);
-                _buffer[1] = (byte)value;
+                FrameHelpers.Set15BitsAt(_buffer, 0, value);
             }
         }
 
@@ -84,12 +75,24 @@ namespace ServerProtocol.Framing
         {
             get
             {
-                return (ControlFrameType)((_buffer[2] << 8) | _buffer[3]);
+                return (ControlFrameType)(FrameHelpers.Get16BitsAt(_buffer, 2));
             }
             set
             {
-                _buffer[2] = (byte)((int)value >> 8);
-                _buffer[3] = (byte)value;
+                FrameHelpers.Set16BitsAt(_buffer, 2, (int)value);
+            }
+        }
+
+        // 8 bits, 32-39
+        public FrameFlags Flags
+        {
+            get
+            {
+                return (FrameFlags)_buffer[4];
+            }
+            set
+            {
+                _buffer[4] = (byte)value;
             }
         }
 
@@ -98,13 +101,11 @@ namespace ServerProtocol.Framing
         {
             get
             {
-                return (_buffer[5] << 16) | (_buffer[6] << 8) | _buffer[7];
+                return FrameHelpers.Get24BitsAt(_buffer, 5);
             }
             set
             {
-                _buffer[5] = (byte)(value >> 16);
-                _buffer[6] = (byte)(value >> 8);
-                _buffer[7] = (byte)value;
+                FrameHelpers.Set24BitsAt(_buffer, 5, value);
             }
         }
     }

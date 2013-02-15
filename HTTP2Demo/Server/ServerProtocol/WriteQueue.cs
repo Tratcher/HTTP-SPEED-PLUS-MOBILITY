@@ -48,6 +48,29 @@ namespace ServerProtocol
             return entry.Task;
         }
 
+        public async Task PumpToStreamAsync()
+        {
+            while (true)
+            {
+                QueueEntry entry;
+                while (_messageQueue.TryDequeue(out entry))
+                {
+                    // TODO: Check if the write was canceled?
+
+                    if (entry.Buffer != null)
+                    {
+                        await _stream.WriteAsync(entry.Buffer, 0, entry.Buffer.Length);
+                    }
+
+                    entry.Complete();
+                }
+                
+                // TODO: What kind of recurring signal can we use here that won't block the thread?
+                _dataAvailable.WaitOne();
+                _dataAvailable.Reset();
+            }
+        }
+
         private class QueueEntry
         {
             private TaskCompletionSource<object> _tcs;
@@ -62,6 +85,11 @@ namespace ServerProtocol
             public byte[] Buffer { get { return _buffer; } }
 
             public Task Task { get { return _tcs.Task; } }
+
+            internal void Complete()
+            {
+                _tcs.TrySetResult(null);
+            }
         }
     }
 }
