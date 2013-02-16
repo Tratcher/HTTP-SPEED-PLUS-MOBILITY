@@ -24,7 +24,6 @@ namespace ServerProtocol
         private WriteQueue _writeQueue;
         private CompressionProcessor _compressor;
         
-        // For use with incoming HTTP2 binary frames
         private Http2Stream(TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
         {
             _transportInfo = transportInfo;

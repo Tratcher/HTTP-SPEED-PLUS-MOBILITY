@@ -34,8 +34,9 @@
 
 namespace ServerProtocol.Compression
 {
-	using System.IO;
-	using zlib;
+    using System.Diagnostics.Contracts;
+    using System.IO;
+    using zlib;
 
 	/// <summary>
 	/// ZStream with dictionary support.
@@ -51,15 +52,21 @@ namespace ServerProtocol.Compression
         /// <param name="isCompressor">Is stream compressor or decompressor.</param>
         /// <param name="dictionary">The dictionary.</param>
         /// <param name="level">Compression level.</param>
-        public ZOutputStreamExt(Stream outStream, bool isCompressor, byte[] dictionary, int level = zlibConst.Z_DEFAULT_COMPRESSION)
+        public ZOutputStreamExt(Stream outStream, byte[] dictionary, int level)
             : base(outStream, level)
         {
-            compress = isCompressor; 
             _dictionary = dictionary;
-            if (isCompressor == true)
-                z.deflateSetDictionary(dictionary, dictionary.Length);
-            else
-                z.inflateInit();
+            // TODO: Setting the seed dictionary always causes decompression to fail
+            // z.deflateSetDictionary(_dictionary, _dictionary.Length);
+            FlushMode = zlibConst.Z_SYNC_FLUSH;
+        }
+
+        // Decompression, no level flag
+        public ZOutputStreamExt(Stream outStream, byte[] dictionary)
+            : base(outStream)
+        {
+            _dictionary = dictionary;
+            z.inflateSetDictionary(_dictionary, _dictionary.Length);
         }
 
 		/// <summary>

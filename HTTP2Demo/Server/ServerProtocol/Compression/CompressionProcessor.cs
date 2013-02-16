@@ -53,9 +53,8 @@ namespace ServerProtocol.Compression
 		{
             _memStreamCompression = new MemoryStream();
             _memStreamDecompression = new MemoryStream();
-            _compressOutZStream = new ZOutputStreamExt(_memStreamCompression, true , CompressionDictionary.Dictionary);
-            _compressOutZStream.FlushMode = zlibConst.Z_SYNC_FLUSH;
-            _decompressOutZStream = new ZOutputStreamExt(_memStreamDecompression, false , CompressionDictionary.Dictionary);
+            _compressOutZStream = new ZOutputStreamExt(_memStreamCompression, CompressionDictionary.Dictionary, zlibConst.Z_DEFAULT_COMPRESSION);
+            _decompressOutZStream = new ZOutputStreamExt(_memStreamDecompression, CompressionDictionary.Dictionary);
 		}
 
 		/// <summary>
@@ -73,7 +72,6 @@ namespace ServerProtocol.Compression
                 output.Write(buffer, 0, len);
             }
 
-
 			output.Flush();
 		}
 
@@ -88,6 +86,7 @@ namespace ServerProtocol.Compression
             using (Stream inMemoryStream = new MemoryStream(inData))
             {
                 CopyStream(inMemoryStream, _compressOutZStream);
+                _compressOutZStream.finish();
                 outData = _memStreamCompression.ToArray();
                 ClearStream(_memStreamCompression, (int)_memStreamCompression.Length);
             }
@@ -112,8 +111,9 @@ namespace ServerProtocol.Compression
         /// </summary>
         /// <param name="inData">The input data to decompress.</param>
         /// <param name="outData">The decompressed output data.</param>
-        public void Decompress(byte[] inData, out byte[] outData)
+        public byte[] Decompress(byte[] inData)
         {
+            byte[] outData;
             using (Stream inMemoryStream = new MemoryStream(inData))
             {
                 try
@@ -127,10 +127,10 @@ namespace ServerProtocol.Compression
                     _decompressOutZStream.finish();
                 }
 
-
                 outData = _memStreamDecompression.ToArray();
                 ClearStream(_memStreamDecompression, (int)_memStreamDecompression.Length);
             }
+            return outData;
         }
 
         /// <summary>

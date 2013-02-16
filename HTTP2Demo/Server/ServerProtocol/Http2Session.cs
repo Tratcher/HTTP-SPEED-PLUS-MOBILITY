@@ -12,7 +12,7 @@ using ServerProtocol.Framing;
 
 namespace ServerProtocol
 {
-using AppFunc = Func<IDictionary<string, object>, Task>;
+    using AppFunc = Func<IDictionary<string, object>, Task>;
 
     public class Http2Session
     {
