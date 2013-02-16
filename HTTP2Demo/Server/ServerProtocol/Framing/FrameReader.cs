@@ -44,7 +44,7 @@ namespace ServerProtocol.Framing
             switch (preamble.FrameType)
             {
                 case ControlFrameType.SynStream:
-                    return new SynFrame(preamble);
+                    return new SynStreamFrame(preamble);
 
                 default:
                     throw new NotImplementedException("Frame type: " + preamble.FrameType);

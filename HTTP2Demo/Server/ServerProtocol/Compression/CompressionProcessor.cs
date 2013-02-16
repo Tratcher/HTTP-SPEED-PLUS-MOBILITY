@@ -113,8 +113,13 @@ namespace ServerProtocol.Compression
         /// <param name="outData">The decompressed output data.</param>
         public byte[] Decompress(byte[] inData)
         {
+            return Decompress(new ArraySegment<byte>(inData));
+        }
+
+        public byte[] Decompress(ArraySegment<byte> inData)
+        {
             byte[] outData;
-            using (Stream inMemoryStream = new MemoryStream(inData))
+            using (Stream inMemoryStream = new MemoryStream(inData.Array, inData.Offset, inData.Count))
             {
                 try
                 {

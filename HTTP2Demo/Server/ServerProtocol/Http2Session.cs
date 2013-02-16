@@ -106,7 +106,7 @@ namespace ServerProtocol
                 {
                     // New incoming request stream
                     case ControlFrameType.SynStream:
-                        SynFrame synFrame = (SynFrame)frame;
+                        SynStreamFrame synFrame = (SynStreamFrame)frame;
                         Http2Stream stream = new Http2Stream(synFrame, _transportInfo, _writeQueue, _cancel);
                         DispatchNewStream(synFrame.StreamId, stream);
                         return;

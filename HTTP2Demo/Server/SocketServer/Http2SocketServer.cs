@@ -76,14 +76,36 @@ namespace SocketServer
 
                     // TODO: At this point we could read the first bit of the first byte received on this connection to determine if it is a HTTP/1.1 or 2.0 request.
 
-                    Http2Session session = new Http2Session(_next, new TransportInformation()
-                        {
-                            ClientCertificate = clientCert,
-                            LocalIpAddress = ((IPEndPoint)clientSocket.LocalEndPoint).Address.ToString(),
-                            LocalPort = ((IPEndPoint)clientSocket.LocalEndPoint).Port.ToString(CultureInfo.InvariantCulture),
-                            RemoteIpAddress = ((IPEndPoint)clientSocket.RemoteEndPoint).Address.ToString(),
-                            RemotePort = ((IPEndPoint)clientSocket.RemoteEndPoint).Port.ToString(CultureInfo.InvariantCulture),
-                        });
+                    IPEndPoint localEndPoint = (IPEndPoint)clientSocket.LocalEndPoint;
+                    IPEndPoint remoteEndPoint = (IPEndPoint)clientSocket.RemoteEndPoint;
+
+                    TransportInformation transportInfo = new TransportInformation()
+                    {
+                        ClientCertificate = clientCert,
+                        LocalPort = localEndPoint.Port.ToString(CultureInfo.InvariantCulture),
+                        RemotePort = remoteEndPoint.Port.ToString(CultureInfo.InvariantCulture),
+                    };
+                    
+                    // Side effect of using dual mode sockets, the IPv4 addresses look like 0::ffff:127.0.0.1.
+                    if (localEndPoint.Address.IsIPv4MappedToIPv6)
+                    {
+                        transportInfo.LocalIpAddress = localEndPoint.Address.MapToIPv4().ToString();
+                    }
+                    else
+                    {
+                        transportInfo.LocalIpAddress = localEndPoint.Address.ToString();
+                    }
+
+                    if (remoteEndPoint.Address.IsIPv4MappedToIPv6)
+                    {
+                        transportInfo.RemoteIpAddress = remoteEndPoint.Address.MapToIPv4().ToString();
+                    }
+                    else
+                    {
+                        transportInfo.RemoteIpAddress = remoteEndPoint.Address.ToString();
+                    }
+
+                    Http2Session session = new Http2Session(_next, transportInfo);
                     // TODO: awaiting here will only let us accept the next session after the current one finishes.
                     await session.Start(stream, CancellationToken.None);
                 }

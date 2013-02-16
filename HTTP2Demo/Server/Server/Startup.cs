@@ -34,15 +34,15 @@ namespace Server
         public Task Invoke(IDictionary<string, object> environment)
         {
             OwinResponse owinResponse = new OwinResponse(environment);
-            /*
+
 	        string responseText = "Hello World";
 	        byte[] responseBytes = Encoding.UTF8.GetBytes(responseText);
-	  */
-	        // owinResponse.SetHeader("Content-Length", responseBytes.Length.ToString(CultureInfo.InvariantCulture));
-            // owinResponse.SetHeader("Content-Type", "text/plain");
 
-            // return owinResponse.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
-            return Task.FromResult<object>(null);
+	        owinResponse.SetHeader("Content-Length", responseBytes.Length.ToString(CultureInfo.InvariantCulture));
+            owinResponse.SetHeader("Content-Type", "text/plain");
+
+            return owinResponse.Body.WriteAsync(responseBytes, 0, responseBytes.Length);
+            // return Task.FromResult<object>(null);
         }
     }
 }
