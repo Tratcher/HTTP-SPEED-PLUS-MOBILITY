@@ -1,5 +1,5 @@
 ﻿//-----------------------------------------------------------------------
-// <copyright file="BinaryHelper.cs" company="Microsoft Open Technologies, Inc.">
+// <copyright file="CompressionProcessor.cs" company="Microsoft Open Technologies, Inc.">
 //
 // The copyright in this software is being made available under the BSD License, included below. 
 // This software may be subject to other third party and contributor rights, including patent rights, 
@@ -32,7 +32,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace ServerProtocol.Compression
+namespace SharedProtocol.Compression
 {
 	using System;
 	using zlib;

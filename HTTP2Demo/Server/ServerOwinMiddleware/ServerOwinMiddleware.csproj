@@ -56,6 +56,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Shared\SharedProtocol\SharedProtocol.csproj">
+      <Project>{e34ac310-324c-46bc-af9f-1a41df58e867}</Project>
+      <Name>SharedProtocol</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ServerProtocol\ServerProtocol.csproj">
       <Project>{d7d6c1eb-016e-491f-806a-5bfec806179d}</Project>
       <Name>ServerProtocol</Name>

@@ -1,11 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.Linq;
+﻿using System.Diagnostics.Contracts;
 using System.Text;
-using System.Threading.Tasks;
 
-namespace ServerProtocol.Framing
+namespace SharedProtocol.Framing
 {
     // Helpers for reading binary fields of various sizes
     public static class FrameHelpers

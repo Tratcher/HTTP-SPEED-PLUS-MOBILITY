@@ -1,5 +1,5 @@
 ﻿
-namespace ServerProtocol.Framing
+namespace SharedProtocol.Framing
 {
     // Represents the initial frame fields on every frame.
     //

@@ -32,7 +32,7 @@
 // </copyright>
 //-----------------------------------------------------------------------
 
-namespace ServerProtocol.Compression
+namespace SharedProtocol.Compression
 {
 	/// <summary>
 	/// Compression dictionary.

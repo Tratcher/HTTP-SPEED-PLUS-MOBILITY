@@ -1,7 +1,7 @@
-﻿using ServerProtocol.Compression;
+﻿using SharedProtocol.Compression;
 using Xunit;
 
-namespace ServerProtocol.Tests
+namespace SharedProtocol.Tests
 {
     public class CompressionTests
     {

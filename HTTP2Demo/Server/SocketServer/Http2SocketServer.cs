@@ -105,7 +105,7 @@ namespace SocketServer
                         transportInfo.RemoteIpAddress = remoteEndPoint.Address.ToString();
                     }
 
-                    Http2Session session = new Http2Session(_next, transportInfo);
+                    Http2ServerSession session = new Http2ServerSession(_next, transportInfo);
                     // TODO: awaiting here will only let us accept the next session after the current one finishes.
                     await session.Start(stream, CancellationToken.None);
                 }

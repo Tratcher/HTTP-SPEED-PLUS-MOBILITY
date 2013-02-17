@@ -1,4 +1,5 @@
-﻿using ServerProtocol.Framing;
+﻿using SharedProtocol;
+using SharedProtocol.Framing;
 using System;
 using System.Collections.Generic;
 using System.IO;

@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{658C0A0D-A624-4532-AFF0-180EC5ED7887}</ProjectGuid>
+    <ProjectGuid>{E34AC310-324C-46BC-AF9F-1A41DF58E867}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>SocketServer</RootNamespace>
-    <AssemblyName>SocketServer</AssemblyName>
+    <RootNamespace>SharedProtocol</RootNamespace>
+    <AssemblyName>SharedProtocol</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <SolutionDir Condition="$(SolutionDir) == '' Or $(SolutionDir) == '*Undefined*'">..\..\</SolutionDir>
@@ -32,9 +32,6 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Owin.Types">
-      <HintPath>..\..\packages\Owin.Types.0.8.3-alpha\lib\net40\Owin.Types.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -42,25 +39,30 @@
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="zlib.net">
+      <HintPath>..\..\packages\zlib.net.1.0.4.0\lib\zlib.net.dll</HintPath>
+    </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DictionaryExtensions.cs" />
-    <Compile Include="Http2SocketServer.cs" />
-    <Compile Include="OwinServerFactoryAttribute.cs" />
+    <Compile Include="Compression\CompressionDictionary.cs" />
+    <Compile Include="Compression\CompressionProcessor.cs" />
+    <Compile Include="Compression\ZOutputStreamExt.cs" />
+    <Compile Include="Constants.cs" />
+    <Compile Include="Framing\DataFrame.cs" />
+    <Compile Include="Framing\Frame.cs" />
+    <Compile Include="Framing\FrameFlags.cs" />
+    <Compile Include="Framing\FrameHelpers.cs" />
+    <Compile Include="Framing\FrameReader.cs" />
+    <Compile Include="Framing\FrameType.cs" />
+    <Compile Include="Framing\SynReplyFrame.cs" />
+    <Compile Include="Framing\SynStreamFrame.cs" />
+    <Compile Include="Http2BaseSession.cs" />
+    <Compile Include="Http2BaseStream.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WriteQueue.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Shared\SharedProtocol\SharedProtocol.csproj">
-      <Project>{e34ac310-324c-46bc-af9f-1a41df58e867}</Project>
-      <Name>SharedProtocol</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\ServerProtocol\ServerProtocol.csproj">
-      <Project>{d7d6c1eb-016e-491f-806a-5bfec806179d}</Project>
-      <Name>ServerProtocol</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\nuget.targets" />

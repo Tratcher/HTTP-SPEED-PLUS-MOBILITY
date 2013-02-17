@@ -1,4 +1,4 @@
-﻿using ServerProtocol.Framing;
+﻿using SharedProtocol.Framing;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ServerProtocol
+namespace SharedProtocol
 {
     // Queue up frames to send, including headers, body, flush, pings, etc.
     // TODO: Sort by priority?

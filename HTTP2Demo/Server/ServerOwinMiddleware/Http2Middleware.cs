@@ -37,7 +37,7 @@ namespace ServerOwinMiddleware
             }
 
             SetHttp2UpgradeHeadersAndStatusCode(owinResponse);
-            Http2Session session = await CreateUpgradeSessionAsync(owinRequest);
+            Http2ServerSession session = await CreateUpgradeSessionAsync(owinRequest);
 
             owinRequest.Upgrade(opaque =>
             {
@@ -74,7 +74,7 @@ namespace ServerOwinMiddleware
             owinResponse.SetHeader("Upgrade", "HTTP/2.0");
         }
 
-        private async Task<Http2Session> CreateUpgradeSessionAsync(OwinRequest owinRequest)
+        private async Task<Http2ServerSession> CreateUpgradeSessionAsync(OwinRequest owinRequest)
         {
             // Create a new Http2Session object with the following:
             // A reference to AppFunc _next
@@ -94,7 +94,7 @@ namespace ServerOwinMiddleware
             }
 
             // The opaque stream and CancellationToken will be provided after the opaque upgrade.
-            return new Http2Session(_next, CreateTransportInfo(clientCert, owinRequest), CopyHandshakeRequest(owinRequest));
+            return new Http2ServerSession(_next, CreateTransportInfo(clientCert, owinRequest), CopyHandshakeRequest(owinRequest));
         }
 
         private TransportInformation CreateTransportInfo(X509Certificate clientCert, OwinRequest owinRequest)

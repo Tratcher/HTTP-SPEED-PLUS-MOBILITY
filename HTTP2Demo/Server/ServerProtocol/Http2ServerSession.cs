@@ -8,13 +8,14 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ServerProtocol.Framing;
+using SharedProtocol.Framing;
+using SharedProtocol;
 
 namespace ServerProtocol
 {
     using AppFunc = Func<IDictionary<string, object>, Task>;
 
-    public class Http2Session
+    public class Http2ServerSession : Http2BaseSession
     {
         private AppFunc _next;
         private X509Certificate[] _clientCerts;
@@ -22,20 +23,15 @@ namespace ServerProtocol
         private Stream _rawStream;
         private CancellationToken _cancel;
         private TransportInformation _transportInfo;
-        private bool _goAwayReceived;
-        private ConcurrentDictionary<int, Http2Stream> _activeStreams;
-        private FrameReader _reader;
-        private WriteQueue _writeQueue;
 
-        public Http2Session(AppFunc next, TransportInformation transportInfo, IDictionary<string, object> upgradeRequest = null)
+        public Http2ServerSession(AppFunc next, TransportInformation transportInfo, IDictionary<string, object> upgradeRequest = null)
+            : base()
         {
             _next = next;
             _transportInfo = transportInfo;
             _clientCerts = new X509Certificate[Constants.DefaultClientCertVectorSize];
             _clientCerts[0] = _transportInfo.ClientCertificate;
             _upgradeRequest = upgradeRequest;
-            _goAwayReceived = false;
-            _activeStreams = new ConcurrentDictionary<int, Http2Stream>();
         }
 
         public Task Start(Stream stream, CancellationToken cancel)
@@ -44,7 +40,7 @@ namespace ServerProtocol
             _rawStream = stream;
             _cancel = cancel;
             _writeQueue = new WriteQueue(_rawStream);
-            _reader = new FrameReader(_rawStream, _cancel);
+            _frameReader = new FrameReader(_rawStream, _cancel);
 
             // Dispatch the original upgrade stream via _next;
             if (_upgradeRequest != null)
@@ -63,7 +59,7 @@ namespace ServerProtocol
 
         private void DispatchInitialRequest()
         {
-            Http2Stream stream = new Http2Stream(1, _transportInfo, _upgradeRequest, _writeQueue, _cancel);
+            Http2ServerStream stream = new Http2ServerStream(1, _transportInfo, _upgradeRequest, _writeQueue, _cancel);
 
             // GC the original
             _upgradeRequest = null;
@@ -71,7 +67,7 @@ namespace ServerProtocol
             DispatchNewStream(1, stream);
         }
 
-        private void DispatchNewStream(int id, Http2Stream stream)
+        private void DispatchNewStream(int id, Http2ServerStream stream)
         {
             _activeStreams[id] = stream;
             Task.Run(() => stream.Run(_next))
@@ -93,7 +89,7 @@ namespace ServerProtocol
         {
             while (!_goAwayReceived)
             {
-                Frame frame = await _reader.ReadFrameAsync();
+                Frame frame = await _frameReader.ReadFrameAsync();
                 DispatchIncomingFrame(frame);
             }
         }
@@ -107,7 +103,7 @@ namespace ServerProtocol
                     // New incoming request stream
                     case ControlFrameType.SynStream:
                         SynStreamFrame synFrame = (SynStreamFrame)frame;
-                        Http2Stream stream = new Http2Stream(synFrame, _transportInfo, _writeQueue, _cancel);
+                        Http2ServerStream stream = new Http2ServerStream(synFrame, _transportInfo, _writeQueue, _cancel);
                         DispatchNewStream(synFrame.StreamId, stream);
                         return;
 
@@ -117,7 +113,7 @@ namespace ServerProtocol
             }
             else
             {
-                Http2Stream stream;
+                Http2BaseStream stream;
                 if (!_activeStreams.TryGetValue(frame.DataStreamId, out stream))
                 {
                     // TODO: Session already gone? Send a reset?
@@ -125,7 +121,7 @@ namespace ServerProtocol
                 }
                 else
                 {
-                    stream.ReceiveRequestData((DataFrame)frame);
+                    stream.ReceiveData((DataFrame)frame);
                 }
                 return;
             }

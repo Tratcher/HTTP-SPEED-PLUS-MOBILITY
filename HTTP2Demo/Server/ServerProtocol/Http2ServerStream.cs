@@ -1,6 +1,6 @@
 ﻿using Owin.Types;
-using ServerProtocol.Compression;
-using ServerProtocol.Framing;
+using SharedProtocol.Compression;
+using SharedProtocol.Framing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
@@ -8,12 +8,13 @@ using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using SharedProtocol;
 
 namespace ServerProtocol
 {
     using AppFunc = Func<IDictionary<string, object>, Task>;
 
-    internal class Http2Stream
+    internal class Http2ServerStream : Http2BaseStream
     {
         private int _id;
         private TransportInformation _transportInfo;
@@ -31,7 +32,7 @@ namespace ServerProtocol
         private SynStreamFrame _synFrame;
         private IDictionary<string, object> _upgradeEnvironment;
         
-        private Http2Stream(TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
+        private Http2ServerStream(TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
         {
             _transportInfo = transportInfo;
             _writeQueue = writeQueue;
@@ -40,7 +41,7 @@ namespace ServerProtocol
         }
 
         // For use with HTTP/1.1 upgrade handshakes
-        public Http2Stream(int id, TransportInformation transportInfo, IDictionary<string, object> upgradeEnvironment,
+        public Http2ServerStream(int id, TransportInformation transportInfo, IDictionary<string, object> upgradeEnvironment,
             WriteQueue writeQueue, CancellationToken cancel)
             : this(transportInfo, writeQueue, cancel)
         {
@@ -52,7 +53,7 @@ namespace ServerProtocol
         }
 
         // For use with incoming HTTP2 binary frames
-        public Http2Stream(SynStreamFrame synFrame, TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
+        public Http2ServerStream(SynStreamFrame synFrame, TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
             : this(transportInfo, writeQueue, cancel)
         {
             _id = synFrame.StreamId;
@@ -62,13 +63,6 @@ namespace ServerProtocol
         public int Id { get { return _id; } }
 
         public IDictionary<string, object> Environment { get { return _environment; } }
-
-        // Additional data has arrived for the request stream.  Add it to our request stream buffer, 
-        // update any necessary state (e.g. FINs), and trigger any waiting readers.
-        internal void ReceiveRequestData(DataFrame dataFrame)
-        {
-            throw new NotImplementedException();
-        }
 
         // We've been offloaded onto a new thread. Decode the headers, invoke next, and do cleanup processing afterwards
         internal async Task Run(AppFunc next)
