@@ -84,14 +84,18 @@ namespace ClientHandler
                         sessionStream = await _connectionResolver.ConnectAsync(requestUri.DnsSafeHost, requestUri.Port, cancel);
                     }
 
-                    _clientSession = new Http2ClientSession(sessionStream);
-
                     if (_do11Handshake)
                     {
-                        await DoHandshakeAsync(request, cancel);
+                        await DoHandshakeAsync(sessionStream, request, cancel);
+                        // TODO: Create a HTTP2Stream for the handshake request
                     }
-                    _clientSession.StartPumps();
-                    _connectingLock.Release(99); // Unblock all, this method no longer needs to be one at a time.
+
+                    _clientSession = new Http2ClientSession(sessionStream);
+
+                    // TODO: Listen to task for errors?
+                    Task pumpTasks = _clientSession.StartPumps();
+
+                    _connectingLock.Release(999); // Unblock all, this method no longer needs to be one at a time.
                     return _do11Handshake;
                 }
                 return false;
@@ -116,9 +120,9 @@ namespace ClientHandler
         }
 
         // The session was just created, we're under a lock, do the initial handshake.
-        private async Task DoHandshakeAsync(HttpRequestMessage request, CancellationToken cancel)
+        private async Task DoHandshakeAsync(Stream sessionStream, HttpRequestMessage request, CancellationToken cancel)
         {
-            await _clientSession.DoHandshakeAsync(request.RequestUri, request.Method.ToString(), 
+            await HanshakeManager.DoHandshakeAsync(sessionStream, request.RequestUri, request.Method.ToString(), 
                 "HTTP/" + request.Version.ToString(2), request.Headers, cancel);
             throw new NotImplementedException();
         }

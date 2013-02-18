@@ -49,12 +49,9 @@ namespace ServerProtocol
             }
 
             // Listen for incoming Http/2.0 frames
-            Task incomingTask = PumpIncommingData();
             // Send outgoing Http/2.0 frames
-            Task outgoingTask = PumpOutgoingData();
-
             // Complete the returned task only at the end of the session.  The connection will be terminated.
-            return Task.WhenAll(incomingTask, outgoingTask);
+            return StartPumps();
         }
 
         private void DispatchInitialRequest()
@@ -84,17 +81,7 @@ namespace ServerProtocol
             // throw new NotImplementedException();
         }
 
-        // Read HTTP/2.0 frames from the raw stream and dispatch them to the appropriate virtual streams for processing.
-        private async Task PumpIncommingData()
-        {
-            while (!_goAwayReceived)
-            {
-                Frame frame = await _frameReader.ReadFrameAsync();
-                DispatchIncomingFrame(frame);
-            }
-        }
-
-        private void DispatchIncomingFrame(Frame frame)
+        protected override void DispatchIncomingFrame(Frame frame)
         {
             if (frame.IsControl)
             {
@@ -126,12 +113,6 @@ namespace ServerProtocol
                 return;
             }
             throw new NotImplementedException();
-        }
-
-        // Manage the outgoing queue of requests.
-        private Task PumpOutgoingData()
-        {
-            return _writeQueue.PumpToStreamAsync();
         }
     }
 }

@@ -20,5 +20,33 @@ namespace SharedProtocol
             _goAwayReceived = false;
             _activeStreams = new ConcurrentDictionary<int, Http2BaseStream>();
         }
+
+        public Task StartPumps()
+        {
+            // Listen for incoming Http/2.0 frames
+            Task incomingTask = PumpIncommingData();
+            // Send outgoing Http/2.0 frames
+            Task outgoingTask = PumpOutgoingData();
+
+            return Task.WhenAll(incomingTask, outgoingTask);
+        }
+
+        // Read HTTP/2.0 frames from the raw stream and dispatch them to the appropriate virtual streams for processing.
+        private async Task PumpIncommingData()
+        {
+            while (!_goAwayReceived)
+            {
+                Frame frame = await _frameReader.ReadFrameAsync();
+                DispatchIncomingFrame(frame);
+            }
+        }
+
+        protected abstract void DispatchIncomingFrame(Frame frame);
+
+        // Manage the outgoing queue of requests.
+        private Task PumpOutgoingData()
+        {
+            return _writeQueue.PumpToStreamAsync();
+        }
     }
 }
