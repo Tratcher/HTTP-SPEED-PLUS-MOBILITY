@@ -17,7 +17,7 @@ namespace ClientHandler
     // Note: This could also fall back to HTTP/1.1, but that's out of scope for this project.
     public class Http2SessionHandler : HttpMessageHandler
     {
-        private SemaphoreSlim _connectingLock = new SemaphoreSlim(99, 100);
+        private SemaphoreSlim _connectingLock = new SemaphoreSlim(1, 1000);
         private IConnectionResolver _connectionResolver;
         private ISecureConnectionResolver _secureConnectionResolver;
         private Http2ClientSession _clientSession;
