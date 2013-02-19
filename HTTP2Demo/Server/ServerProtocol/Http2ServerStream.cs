@@ -16,37 +16,28 @@ namespace ServerProtocol
 
     internal class Http2ServerStream : Http2BaseStream
     {
-        private int _id;
         private TransportInformation _transportInfo;
         private IDictionary<string, object> _environment;
         private OwinRequest _owinRequest;
         private OwinResponse _owinResponse;
         private object _responseStarted;
-        private WriteQueue _writeQueue;
-        private CompressionProcessor _compressor;
-        private CancellationToken _cancel;
-        private int _version;
-        private int _priority;
         private int _certSlot;
 
         private SynStreamFrame _synFrame;
         private IDictionary<string, object> _upgradeEnvironment;
         
-        private Http2ServerStream(TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
+        private Http2ServerStream(int id, TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
+            : base(id, writeQueue, cancel)
         {
             _transportInfo = transportInfo;
-            _writeQueue = writeQueue;
-            _cancel = cancel;
-            _compressor = new CompressionProcessor();
         }
 
         // For use with HTTP/1.1 upgrade handshakes
         public Http2ServerStream(int id, TransportInformation transportInfo, IDictionary<string, object> upgradeEnvironment,
             WriteQueue writeQueue, CancellationToken cancel)
-            : this(transportInfo, writeQueue, cancel)
+            : this(id, transportInfo, writeQueue, cancel)
         {
             Contract.Assert(id == 1, "This constructor is only used for the initial HTTP/1.1 handshake request.");
-            _id = id;
             _upgradeEnvironment = upgradeEnvironment;
 
             // Environment will be populated on another thread in Run
@@ -54,9 +45,8 @@ namespace ServerProtocol
 
         // For use with incoming HTTP2 binary frames
         public Http2ServerStream(SynStreamFrame synFrame, TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
-            : this(transportInfo, writeQueue, cancel)
+            : this(synFrame.StreamId, transportInfo, writeQueue, cancel)
         {
-            _id = synFrame.StreamId;
             _synFrame = synFrame;
         }
 
@@ -306,29 +296,7 @@ namespace ServerProtocol
                     string.Join("\0", pair.Value)));
             }
 
-            int encodedLength = 4 // 32 bit count of name value pairs
-                + 8 * pairs.Count; // A 32 bit size per header and value;
-            for (int i = 0; i < pairs.Count; i++)
-            {
-                encodedLength += pairs[i].Key.Length + pairs[i].Value.Length;
-            }
-
-            byte[] buffer = new byte[encodedLength];
-            FrameHelpers.Set32BitsAt(buffer, 0, pairs.Count);
-            int offset = 4;
-            for (int i = 0; i < pairs.Count; i++)
-            {
-                KeyValuePair<string, string> pair = pairs[i];
-                FrameHelpers.Set32BitsAt(buffer, offset, pair.Key.Length);
-                offset += 4;
-                FrameHelpers.SetAsciiAt(buffer, offset, pair.Key);
-                offset += pair.Key.Length;
-                FrameHelpers.Set32BitsAt(buffer, offset, pair.Value.Length);
-                offset += 4;
-                FrameHelpers.SetAsciiAt(buffer, offset, pair.Value);
-                offset += pair.Value.Length;
-            }
-            return buffer;
+            return FrameHelpers.SerializeHeaderBlock(pairs);
         }
 
         private void EndResponse()

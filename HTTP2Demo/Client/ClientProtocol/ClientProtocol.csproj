@@ -53,6 +53,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="GlobalSuppressions.cs" />
+    <Compile Include="HandshakeResponse.cs" />
+    <Compile Include="HandshakeResult.cs" />
     <Compile Include="HanshakeManager.cs" />
     <Compile Include="Http2ClientSession.cs" />
     <Compile Include="Http2ClientStream.cs" />

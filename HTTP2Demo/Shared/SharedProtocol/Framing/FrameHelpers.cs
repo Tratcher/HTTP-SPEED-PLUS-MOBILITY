@@ -1,4 +1,6 @@
-﻿using System.Diagnostics.Contracts;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Text;
 
 namespace SharedProtocol.Framing
@@ -143,10 +145,42 @@ namespace SharedProtocol.Framing
             Encoding.ASCII.GetBytes(value, 0, value.Length, buffer, offset);
         }
 
+        public static string GetAsciiAt(ArraySegment<byte> segment)
+        {
+            return Encoding.ASCII.GetString(segment.Array, segment.Offset, segment.Count);
+        }
+
         public static string GetAsciiAt(byte[] buffer, int offset, int length)
         {
             Contract.Assert(offset >= 0 && offset + length - 1 < buffer.Length);
             return Encoding.ASCII.GetString(buffer, offset, length);
+        }
+
+        public static byte[] SerializeHeaderBlock(IList<KeyValuePair<string, string>> pairs)
+        {
+            int encodedLength = 4 // 32 bit count of name value pairs
+                + 8 * pairs.Count; // A 32 bit size per header and value;
+            for (int i = 0; i < pairs.Count; i++)
+            {
+                encodedLength += pairs[i].Key.Length + pairs[i].Value.Length;
+            }
+
+            byte[] buffer = new byte[encodedLength];
+            FrameHelpers.Set32BitsAt(buffer, 0, pairs.Count);
+            int offset = 4;
+            for (int i = 0; i < pairs.Count; i++)
+            {
+                KeyValuePair<string, string> pair = pairs[i];
+                FrameHelpers.Set32BitsAt(buffer, offset, pair.Key.Length);
+                offset += 4;
+                FrameHelpers.SetAsciiAt(buffer, offset, pair.Key);
+                offset += pair.Key.Length;
+                FrameHelpers.Set32BitsAt(buffer, offset, pair.Value.Length);
+                offset += 4;
+                FrameHelpers.SetAsciiAt(buffer, offset, pair.Value);
+                offset += pair.Value.Length;
+            }
+            return buffer;
         }
     }
 }

@@ -6,10 +6,10 @@ namespace SharedProtocol.Framing
     public class SynStreamFrame : Frame
     {
         // The number of bytes in the frame, not including the compressed headers.
-        // private const int InitialFrameSize = 18;
-        /*
+        private const int InitialFrameSize = 18;
+
         // Create an outgoing frame
-        public SynStreamFrame(byte[] headerBytes, int streamId)
+        public SynStreamFrame(int streamId, byte[] headerBytes)
             : base(new byte[InitialFrameSize + headerBytes.Length])
         {
             IsControl = true;
@@ -21,7 +21,7 @@ namespace SharedProtocol.Framing
             // Copy in the headers
             System.Buffer.BlockCopy(headerBytes, 0, Buffer, InitialFrameSize, headerBytes.Length);
         }
-        */
+
         // Create an incoming frame
         public SynStreamFrame(Frame preamble)
             : base(new byte[preamble.Length + Constants.FramePreambleSize])
