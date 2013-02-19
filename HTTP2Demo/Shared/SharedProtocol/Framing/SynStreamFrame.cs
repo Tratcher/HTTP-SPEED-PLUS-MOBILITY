@@ -14,7 +14,7 @@ namespace SharedProtocol.Framing
         {
             IsControl = true;
             Version = Constants.CurrentProtocolVersion;
-            FrameType = ControlFrameType.SynReply;
+            FrameType = ControlFrameType.SynStream;
             Length = Buffer.Length - Constants.FramePreambleSize;
             StreamId = streamId;
 

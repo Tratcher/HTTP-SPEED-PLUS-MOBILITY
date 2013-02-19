@@ -2,6 +2,8 @@
 using SharedProtocol.Framing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -17,6 +19,7 @@ namespace SharedProtocol
         protected CancellationToken _cancel;
         protected int _version;
         protected int _priority;
+        protected Stream _incomingStream;
 
         protected Http2BaseStream(int id, WriteQueue writeQueue, CancellationToken cancel)
         {
@@ -40,7 +43,15 @@ namespace SharedProtocol
         // update any necessary state (e.g. FINs), and trigger any waiting readers.
         public void ReceiveData(DataFrame dataFrame)
         {
-            throw new NotImplementedException();
+            Contract.Assert(_incomingStream != null);
+            ArraySegment<byte> data = dataFrame.Data;
+            // TODO: Decompression?
+            _incomingStream.Write(data.Array, data.Offset, data.Count);
+            if ((dataFrame.Flags & FrameFlags.Fin) == FrameFlags.Fin)
+            {
+                // TODO: How can we signal the difference between an aborted stream and a finishes stream?
+                _incomingStream.Dispose();
+            }
         }
     }
 }

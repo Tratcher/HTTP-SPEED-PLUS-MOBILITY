@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace SharedProtocol.Framing
 {
     public class SynReplyFrame : Frame
@@ -19,14 +21,14 @@ namespace SharedProtocol.Framing
             // Copy in the headers
             System.Buffer.BlockCopy(headerBytes, 0, Buffer, InitialFrameSize, headerBytes.Length);
         }
-        /*
+
         // Create an incoming frame
         public SynReplyFrame(Frame preamble)
             : base(new byte[preamble.Length + Constants.FramePreambleSize])
         {
             System.Buffer.BlockCopy(preamble.Buffer, 0, Buffer, 0, Constants.FramePreambleSize);
         }
-        */
+
         // 31 bits, 65-95
         public int StreamId
         {
@@ -37,6 +39,14 @@ namespace SharedProtocol.Framing
             set
             {
                 FrameHelpers.Set31BitsAt(Buffer, 8, value);
+            }
+        }
+
+        public ArraySegment<byte> CompressedHeaders
+        {
+            get
+            {
+                return new ArraySegment<byte>(Buffer, InitialFrameSize, Buffer.Length - InitialFrameSize);
             }
         }
     }

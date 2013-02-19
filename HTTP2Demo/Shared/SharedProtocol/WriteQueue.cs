@@ -78,8 +78,9 @@ namespace SharedProtocol
                 }
                 
                 // TODO: What kind of recurring signal can we use here that won't block the thread?
-                _dataAvailable.WaitOne();
-                _dataAvailable.Reset();
+                // _dataAvailable.WaitOne();
+                // _dataAvailable.Reset();
+                await Task.Delay(1000);
             }
         }
 

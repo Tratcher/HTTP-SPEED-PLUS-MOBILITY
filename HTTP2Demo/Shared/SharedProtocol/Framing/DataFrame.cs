@@ -30,5 +30,14 @@ namespace SharedProtocol.Framing
             DataStreamId = streamId;
             Flags = FrameFlags.Fin;
         }
+
+        public ArraySegment<byte> Data
+        {
+            get
+            {
+                return new ArraySegment<byte>(Buffer, Constants.FramePreambleSize, 
+                    Buffer.Length - Constants.FramePreambleSize);
+            }
+        }
     }
 }

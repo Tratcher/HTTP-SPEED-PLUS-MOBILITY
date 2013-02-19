@@ -3,8 +3,10 @@ using ClientProtocol;
 using SharedProtocol.Framing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
 using System.ServiceModel.Http2Protocol;
@@ -217,6 +219,7 @@ namespace ClientHandler
         // Send a cert update if the server doesn't have this specific client cert yet.
         private int UpdateClientCertificates(HttpRequestMessage request)
         {
+            // TODO:
             return 0;
             // throw new NotImplementedException();
         }
@@ -232,14 +235,65 @@ namespace ClientHandler
             HttpResponseMessage response = new HttpResponseMessage();
             response.Content = streamContent;
 
-            // TODO: Decompress and distribute headers
+            // Decompress and distribute headers
+            byte[] rawHeaders = stream.Compressor.Decompress(responseFrame.CompressedHeaders);
+            IList<KeyValuePair<string, string>> pairs = FrameHelpers.DeserializeHeaderBlock(rawHeaders);
+            foreach (KeyValuePair<string, string> pair in pairs)
+            {
+                if (pair.Key[0] == ':')
+                {
+                    MapResponseProperty(response, pair.Key, pair.Value);
+                }
+                else
+                {
+                    // Null separated list of values
+                    string[] values = pair.Value.Split('\0');
+                    if (!response.Headers.TryAddWithoutValidation(pair.Key, values))
+                    {
+                        if (!response.Content.Headers.TryAddWithoutValidation(pair.Key, values))
+                        {
+                            throw new NotSupportedException("Bad header: " + pair.Key);
+                        }
+                    }
+                }
+            }
+
             // TODO: Associate with the original HttpRequestMessage
             // TODO: How do we receive trailer headers?
             // TODO: How do we receive (or discard) pushed resources?
-                        
-            throw new NotImplementedException();
-
             return response;
+        }
+
+        // HTTP/2.0 sends HTTP/1.1 response properties like status, version, etc. as headers prefixed with ':'
+        private static void MapResponseProperty(HttpResponseMessage response, string key, string value)
+        {
+            // keys are required to be lower case
+            if (":status".Equals(key, StringComparison.Ordinal))
+            {
+                string statusCode = value;
+                int split = value.IndexOf(' ');
+                if (split > 0)
+                {
+                    response.ReasonPhrase = value.Substring(split + 1);
+                    statusCode = value.Substring(0, split);
+                }
+                response.StatusCode = (HttpStatusCode)Int32.Parse(statusCode);
+            }
+            else if (":version".Equals(key, StringComparison.Ordinal))
+            {
+                Contract.Assert(value.StartsWith("HTTP/", StringComparison.OrdinalIgnoreCase));
+                string version = value.Substring("HTTP/".Length);
+                response.Version = Version.Parse(version);
+            }
+        }
+
+        // Verify at least the minimum request properties were set:
+        // Status, version
+        private static void VerifyRequiredRequestsPropertiesSet(HttpResponseMessage response)
+        {
+            // Set bitflags in MapRequestProperty?
+            // TODO:
+            // throw new NotImplementedException();
         }
 
         protected override void Dispose(bool disposing)

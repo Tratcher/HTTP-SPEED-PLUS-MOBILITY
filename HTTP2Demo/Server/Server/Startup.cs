@@ -1,16 +1,14 @@
 ﻿using Owin;
+using Owin.Types;
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Globalization;
 using System.Text;
 using System.Threading.Tasks;
-using System.Globalization;
-using System.IO;
-using Owin.Types;
+using System.Web.Http;
 
 namespace Server
 {
-    using AppFunc = Func<IDictionary<string, object>, Task>;
 
     public class Startup
     {
@@ -27,7 +25,20 @@ namespace Server
             */
 
             builder.UseHttp2();
-            builder.Use(new Func<AppFunc, AppFunc>(ignoredNextApp => (AppFunc)Invoke));
+            // builder.Use(new Func<AppFunc, AppFunc>(ignoredNextApp => (AppFunc)Invoke));
+            ConfigureWebApi(builder);
+        }
+
+        private void ConfigureWebApi(IAppBuilder builder)
+        {
+            HttpConfiguration config = new HttpConfiguration();
+            config.Routes.MapHttpRoute("Default", "{controller}/{customerID}", new { controller = "Customer", customerID = RouteParameter.Optional });
+
+            // config.Formatters.XmlFormatter.UseXmlSerializer = true;
+            // config.Formatters.Remove(config.Formatters.JsonFormatter);
+            config.Formatters.JsonFormatter.UseDataContractJsonSerializer = true;
+
+            builder.UseHttpServer(config);
         }
         
         // Invoked once per request.

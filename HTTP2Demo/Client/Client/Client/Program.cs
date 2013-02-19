@@ -35,17 +35,18 @@
 
 namespace Client
 {
+    using Client.Benchmark;
+    using Client.Http;
+    using Client.Utils;
+    using ClientHandler;
     using System;
     using System.Collections;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Security.Cryptography.X509Certificates;
+    using System.Net.Http;
     using System.ServiceModel.Http2Protocol;
     using System.Threading;
-    using Client.Benchmark;
-    using Client.Http;
-    using Client.Utils;
 
     /// <summary>
     /// Main client class
@@ -148,6 +149,7 @@ namespace Client
         /// </summary>
         /// <param name="args">Arguments to Main</param>
         /// <returns>The return code.</returns>
+        /*
         public static int Main(string[] args)
         {
             Http2Logger.LoggerLevel = Http2LoggerState.VerboseLogging;
@@ -156,6 +158,29 @@ namespace Client
             int res = args.Length == 0 ? ExecuteCommandLoop() : ParseAndExec(args);
 
             return res;
+        }
+        */
+        public static void Main(string[] args)
+        {
+            try
+            {
+                Console.WriteLine("Ready, press any key to send request");
+                Console.ReadKey();
+                using (HttpClient client = new HttpClient(new Http2SessionTracker(do11Handshake: true)))
+                {
+                    HttpResponseMessage response = client.GetAsync(
+                        // "http://localhost:12345"
+                        "http://localhost:12345/Customer/1"
+                        , HttpCompletionOption.ResponseHeadersRead
+                        ).Result;
+                    Console.WriteLine(response);
+                    Console.WriteLine(response.Content.ReadAsStringAsync().Result);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }                 
         }
 
         /// <summary>

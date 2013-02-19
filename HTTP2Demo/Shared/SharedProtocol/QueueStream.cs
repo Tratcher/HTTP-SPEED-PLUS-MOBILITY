@@ -63,12 +63,10 @@ namespace SharedProtocol
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            if (_disposed) return 0;
             VerifyBuffer(buffer, offset, count, allowEmpty: false);
             _readLock.Wait();
             try
             {
-                if (_disposed) return 0;
                 int totalRead = 0;
                 do
                 {
@@ -77,8 +75,8 @@ namespace SharedProtocol
                         byte[] topBuffer = null;
                         while (!_bufferedData.TryDequeue(out topBuffer))
                         {
-                            WaitForDataAsync().Wait();
                             if (_disposed) return 0;
+                            WaitForDataAsync().Wait();
                         }
                         _topBuffer = new ArraySegment<byte>(topBuffer);
                     }
@@ -104,23 +102,23 @@ namespace SharedProtocol
         public override IAsyncResult BeginRead(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             // TODO: This option doesn't preserve the state object.
-            return ReadAsync(buffer, offset, count);
+            // return ReadAsync(buffer, offset, count);
+            return base.BeginRead(buffer, offset, count, callback, state);
         }
 
         public override int EndRead(IAsyncResult asyncResult)
         {
-            return ((Task<int>)asyncResult).Result;
+            // return ((Task<int>)asyncResult).Result;
+            return base.EndRead(asyncResult);
         }
 
         public override async Task<int> ReadAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
-            if (_disposed) return 0;
             cancellationToken.ThrowIfCancellationRequested();
             VerifyBuffer(buffer, offset, count, allowEmpty: false);
             await _readLock.WaitAsync();
             try
             {
-                if (_disposed) return 0;
                 cancellationToken.ThrowIfCancellationRequested();
                 int totalRead = 0;
                 do
@@ -130,8 +128,8 @@ namespace SharedProtocol
                         byte[] topBuffer = null;
                         while (!_bufferedData.TryDequeue(out topBuffer))
                         {
-                            await WaitForDataAsync();
                             if (_disposed) return 0;
+                            await WaitForDataAsync();
                             cancellationToken.ThrowIfCancellationRequested();
                         }
                         _topBuffer = new ArraySegment<byte>(topBuffer);
@@ -253,7 +251,7 @@ namespace SharedProtocol
         {
             _readWaitingForData = new TaskCompletionSource<object>();
 
-            if (_bufferedData.Count > 0)
+            if (_bufferedData.Count > 0 || _disposed)
             {
                 // Race, data could have arrived before we created the TCS.
                 _readWaitingForData.TrySetResult(null);

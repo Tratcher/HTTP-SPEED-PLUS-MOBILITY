@@ -156,6 +156,18 @@ namespace SharedProtocol.Framing
             return Encoding.ASCII.GetString(buffer, offset, length);
         }
 
+        // +------------------------------------+
+        // | Number of Name/Value pairs (int32) |
+        // +------------------------------------+
+        // |     Length of name (int32)         |
+        // +------------------------------------+
+        // |           Name (string)            |
+        // +------------------------------------+
+        // |     Length of value  (int32)       |
+        // +------------------------------------+
+        // |          Value   (string)          |
+        // +------------------------------------+
+        // |           (repeats)                |
         public static byte[] SerializeHeaderBlock(IList<KeyValuePair<string, string>> pairs)
         {
             int encodedLength = 4 // 32 bit count of name value pairs
@@ -181,6 +193,42 @@ namespace SharedProtocol.Framing
                 offset += pair.Value.Length;
             }
             return buffer;
+        }
+
+        // +------------------------------------+
+        // | Number of Name/Value pairs (int32) |
+        // +------------------------------------+
+        // |     Length of name (int32)         |
+        // +------------------------------------+
+        // |           Name (string)            |
+        // +------------------------------------+
+        // |     Length of value  (int32)       |
+        // +------------------------------------+
+        // |          Value   (string)          |
+        // +------------------------------------+
+        // |           (repeats)                |
+        public static IList<KeyValuePair<string, string>> DeserializeHeaderBlock(byte[] rawHeaders)
+        {
+            IList<KeyValuePair<string, string>> headers = new List<KeyValuePair<string, string>>();
+
+            int offset = 0;
+            int headerCount = FrameHelpers.Get32BitsAt(rawHeaders, offset);
+            offset += 4;
+            for (int i = 0; i < headerCount; i++)
+            {
+                int keyLength = FrameHelpers.Get32BitsAt(rawHeaders, offset);
+                Contract.Assert(keyLength > 0);
+                offset += 4;
+                string key = FrameHelpers.GetAsciiAt(rawHeaders, offset, keyLength);
+                offset += keyLength;
+                int valueLength = FrameHelpers.Get32BitsAt(rawHeaders, offset);
+                offset += 4;
+                string value = FrameHelpers.GetAsciiAt(rawHeaders, offset, valueLength);
+                offset += valueLength;
+
+                headers.Add(new KeyValuePair<string,string>(key, value));
+            }
+            return headers;
         }
     }
 }

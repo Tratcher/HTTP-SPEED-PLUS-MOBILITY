@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,6 +15,7 @@ namespace SharedProtocol
         protected ConcurrentDictionary<int, Http2BaseStream> _activeStreams;
         protected FrameReader _frameReader;
         protected WriteQueue _writeQueue;
+        protected Stream _sessionStream;
 
         protected Http2BaseSession()
         {

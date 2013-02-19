@@ -20,7 +20,6 @@ namespace ServerProtocol
         private AppFunc _next;
         private X509Certificate[] _clientCerts;
         private IDictionary<string, object> _upgradeRequest;
-        private Stream _rawStream;
         private CancellationToken _cancel;
         private TransportInformation _transportInfo;
 
@@ -36,11 +35,11 @@ namespace ServerProtocol
 
         public Task Start(Stream stream, CancellationToken cancel)
         {
-            Contract.Assert(_rawStream == null, "Start called more than once");
-            _rawStream = stream;
+            Contract.Assert(_sessionStream == null, "Start called more than once");
+            _sessionStream = stream;
             _cancel = cancel;
-            _writeQueue = new WriteQueue(_rawStream);
-            _frameReader = new FrameReader(_rawStream, _cancel);
+            _writeQueue = new WriteQueue(_sessionStream);
+            _frameReader = new FrameReader(_sessionStream, _cancel);
 
             // Dispatch the original upgrade stream via _next;
             if (_upgradeRequest != null)

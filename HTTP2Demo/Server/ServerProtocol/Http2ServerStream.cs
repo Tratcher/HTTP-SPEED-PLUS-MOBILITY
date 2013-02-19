@@ -13,6 +13,7 @@ using SharedProtocol;
 namespace ServerProtocol
 {
     using AppFunc = Func<IDictionary<string, object>, Task>;
+    using System.Collections;
 
     internal class Http2ServerStream : Http2BaseStream
     {
@@ -158,31 +159,18 @@ namespace ServerProtocol
             _owinRequest.Headers = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
             ArraySegment<byte> compressedHeaders = _synFrame.CompressedHeaders;
             byte[] rawHeaders = _compressor.Decompress(compressedHeaders);
-
+            IList<KeyValuePair<string, string>> pairs = FrameHelpers.DeserializeHeaderBlock(rawHeaders);
    
-            int offset = 0;
-            int headerCount = FrameHelpers.Get32BitsAt(rawHeaders, offset);
-            offset += 4;
-            for (int i = 0; i < headerCount; i++)
+            foreach (KeyValuePair<string, string> pair in pairs)
             {
-                int keyLength = FrameHelpers.Get32BitsAt(rawHeaders, offset);
-                Contract.Assert(keyLength > 0);
-                offset += 4;
-                string key = FrameHelpers.GetAsciiAt(rawHeaders, offset, keyLength);
-                offset += keyLength;
-                int valueLength = FrameHelpers.Get32BitsAt(rawHeaders, offset);
-                offset += 4;
-                string value = FrameHelpers.GetAsciiAt(rawHeaders, offset, valueLength);
-                offset += valueLength;
-
-                if (key[0] == ':')
+                if (pair.Key[0] == ':')
                 {
-                    MapRequestProperty(key, value);
+                    MapRequestProperty(pair.Key, pair.Value);
                 }
                 else
                 {
                     // Null separated list of values
-                    _owinRequest.Headers[key] = value.Split('\0');
+                    _owinRequest.Headers[pair.Key] = pair.Value.Split('\0');
                 }
             }
 
@@ -264,26 +252,13 @@ namespace ServerProtocol
             return true;
         }
 
-        // Includes status code, reason phrase, and version.
-        // +------------------------------------+
-        // | Number of Name/Value pairs (int32) |
-        // +------------------------------------+
-        // |     Length of name (int32)         |
-        // +------------------------------------+
-        // |           Name (string)            |
-        // +------------------------------------+
-        // |     Length of value  (int32)       |
-        // +------------------------------------+
-        // |          Value   (string)          |
-        // +------------------------------------+
-        // |           (repeats)                |
         private byte[] SerializeResponseHeaders()
         {
             IList<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>();
 
             string statusCode = Get<int>("owin.ResponseStatusCode", 200).ToString(CultureInfo.InvariantCulture);
             string reasonPhrase = Get<string>("owin.ResponseReasonPhrase", null);
-            string statusHeader = statusCode + reasonPhrase != null ? " " + reasonPhrase : string.Empty;
+            string statusHeader = statusCode + (reasonPhrase != null ? " " + reasonPhrase : string.Empty);
             pairs.Add(new KeyValuePair<string, string>(":status", statusHeader));
 
             string version = Get<string>("owin.ResponseProtocol", "HTTP/1.1");

@@ -46,6 +46,7 @@
     <Reference Include="System" />
     <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -82,6 +83,10 @@
     <Compile Include="XHtmlDocument.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\ClientHandler\ClientHandler.csproj">
+      <Project>{4cdcbd88-292c-421f-8c57-05560829c5dc}</Project>
+      <Name>ClientHandler</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\ClientProtocol\ClientProtocol.csproj">
       <Project>{59F1A0D5-BB8C-4637-B891-A84A606E59E6}</Project>
       <Name>ClientProtocol</Name>

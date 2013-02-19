@@ -21,7 +21,7 @@ namespace SharedProtocol.Framing
             Frame preamble = new Frame();
             await FillAsync(preamble.Buffer, 0, preamble.Buffer.Length, _cancel);
 
-            if (preamble.Version != Constants.CurrentProtocolVersion)
+            if (preamble.IsControl && preamble.Version != Constants.CurrentProtocolVersion)
             {
                 throw new NotSupportedException("This control frame uses an unsupported version: " + preamble.Version);
             }
@@ -42,6 +42,8 @@ namespace SharedProtocol.Framing
             {
                 case ControlFrameType.SynStream:
                     return new SynStreamFrame(preamble);
+                case ControlFrameType.SynReply:
+                    return new SynReplyFrame(preamble);
 
                 default:
                     throw new NotImplementedException("Frame type: " + preamble.FrameType);

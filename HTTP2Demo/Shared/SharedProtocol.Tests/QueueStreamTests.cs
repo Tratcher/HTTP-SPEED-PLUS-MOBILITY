@@ -26,8 +26,13 @@ namespace SharedProtocol.Tests
             byte[] buffer = new byte[1];
             stream.Write(buffer, 0, 1);
             stream.Dispose();
-            Assert.Equal(0, stream.Read(buffer, 0, 1));
-            Assert.Equal(0, await stream.ReadAsync(buffer, 0, 1));
+            Assert.Equal(1, stream.Read(buffer, 0, 1));
+
+            stream = new QueueStream();
+            buffer = new byte[1];
+            stream.Write(buffer, 0, 1);
+            stream.Dispose();
+            Assert.Equal(1, await stream.ReadAsync(buffer, 0, 1));
             Assert.Throws<ObjectDisposedException>(() => stream.Write(buffer, 0, 1));
             // TODO: A problem with XUnit prevents this exception from coming back to the Assert:
             // Assert.Throws<ObjectDisposedException>(async () => await stream.WriteAsync(buffer, 0, 1));

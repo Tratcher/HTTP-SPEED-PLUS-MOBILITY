@@ -14,8 +14,6 @@ namespace ClientProtocol
     public class Http2ClientStream : Http2BaseStream
     {
         private TaskCompletionSource<SynReplyFrame> _responseTask;
-        // TODO: Before completing the response task, assign the response stream to either Stream.Null or a QueueStream for data.
-        private Stream _responseStream;
 
         public Http2ClientStream(int id, WriteQueue writeQueue, CancellationToken cancel)
             : base(id, writeQueue, cancel)
@@ -33,7 +31,7 @@ namespace ClientProtocol
             get
             {
                 Contract.Assert(_responseTask.Task.IsCompleted);
-                return _responseStream;
+                return _incomingStream;
             }
         }
 
@@ -41,6 +39,20 @@ namespace ClientProtocol
         {
             // TODO: Set stream state
             _writeQueue.WriteFrameAsync(frame, _cancel);
+        }
+
+        public void SetReply(SynReplyFrame frame)
+        {
+            Contract.Assert(!_responseTask.Task.IsCompleted);
+            if ((frame.Flags & FrameFlags.Fin) == FrameFlags.Fin)
+            {
+                _incomingStream = Stream.Null;
+            }
+            else
+            {
+                _incomingStream = new QueueStream();
+            }
+            _responseTask.TrySetResult(frame);
         }
     }
 }

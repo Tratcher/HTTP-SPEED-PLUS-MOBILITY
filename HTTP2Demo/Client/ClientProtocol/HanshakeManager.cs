@@ -85,7 +85,7 @@ namespace ClientProtocol
         private static bool TryFindRangeMatch(byte[] buffer, int offset, int limit, byte[] matchSequence, out int matchIndex)
         {
             matchIndex = 0;
-            for (int master = offset; master < limit && master + matchSequence.Length < limit; master++)
+            for (int master = offset; master < limit && master + matchSequence.Length <= limit; master++)
             {
                 if (TryRangeMatch(buffer, master, limit, matchSequence))
                 {
@@ -98,7 +98,7 @@ namespace ClientProtocol
 
         private static bool TryRangeMatch(byte[] buffer, int offset, int limit, byte[] matchSequence)
         {
-            bool matched = (offset - limit) >= matchSequence.Length;
+            bool matched = (limit - offset) >= matchSequence.Length;
             for (int sequence = 0; sequence < matchSequence.Length && matched; sequence++)
             {
                 matched = (buffer[offset + sequence] == matchSequence[sequence]);
