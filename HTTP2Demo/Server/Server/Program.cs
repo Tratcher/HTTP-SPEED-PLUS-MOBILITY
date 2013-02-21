@@ -15,8 +15,8 @@ namespace Server
                 {
                     options.Url = "http://localhost:12345/";
                     options.Server =
-                        // "Microsoft.Owin.Host.HttpListener"; // No opaque or 2.0 frames
-                        "Microsoft.Owin.Host.HttpSys"; // Opaque only
+                        "Microsoft.Owin.Host.HttpListener"; // No opaque or 2.0 frames
+                        // "Microsoft.Owin.Host.HttpSys"; // Opaque only
                         // "SocketServer"; // 2.0 frames only
                         // "Firefly"; // Opaque?
                 }))

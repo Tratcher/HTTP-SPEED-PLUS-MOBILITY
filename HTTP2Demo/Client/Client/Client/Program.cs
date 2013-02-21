@@ -166,7 +166,8 @@ namespace Client
             {
                 Console.WriteLine("Ready, press any key to send request");
                 Console.ReadKey();
-                using (HttpClient client = new HttpClient(new Http2SessionTracker(do11Handshake: true)))
+                using (HttpClient client = new HttpClient(
+                    new Http2SessionTracker(do11Handshake: true, fallbackHandler: new HttpClientHandler())))
                 {
                     HttpResponseMessage response = client.GetAsync(
                         // "http://localhost:12345"

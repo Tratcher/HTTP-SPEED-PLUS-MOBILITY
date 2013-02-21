@@ -25,22 +25,31 @@ namespace ClientHandler
         private ISecureConnectionResolver _secureConnectionResolver;
         private Http2ClientSession _clientSession;
         private bool _do11Handshake;
+        private HttpMessageInvoker _11fallbackInvoker;
+        private bool _fallbackTo11;
 
-        public Http2SessionHandler(bool do11Handshake)
-            : this(do11Handshake, new SocketConnectionResolver())
+        public Http2SessionHandler(bool do11Handshake, HttpMessageHandler fallbackHandler)
+            : this(do11Handshake, fallbackHandler, new SocketConnectionResolver())
         {
         }
 
-        public Http2SessionHandler(bool do11Handshake, IConnectionResolver connectionResolver)
+        public Http2SessionHandler(bool do11Handshake, HttpMessageHandler fallbackHandler, IConnectionResolver connectionResolver)
         {
             // TODO: Will we need a connection resolver that understands proxies?
             _connectionResolver = connectionResolver;
             _secureConnectionResolver = new SslConnectionResolver(_connectionResolver);
             _do11Handshake = do11Handshake;
+            _11fallbackInvoker = new HttpMessageInvoker(fallbackHandler, disposeHandler: false);
+            _fallbackTo11 = false;
         }
 
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            if (_fallbackTo11)
+            {
+                return await _11fallbackInvoker.SendAsync(request, cancellationToken);
+            }
+
             Http2ClientStream stream;
             int? streamId;
             // Open the session if it hasn't been.
@@ -48,6 +57,11 @@ namespace ClientHandler
             {
                 // This request was submitted during the handshake as StreamId 1
                 stream = _clientSession.GetStream(1);
+            }
+            else if (_fallbackTo11 || _clientSession == null)
+            {
+                // The handshake failed, or this request wasn't handshake compatible (e.g. upload).
+                return await _11fallbackInvoker.SendAsync(request, cancellationToken);
             }
             // Verify the requested resource has not been pushed by the server
             else if ((streamId = CheckForPendingResource(request)).HasValue)
@@ -77,6 +91,11 @@ namespace ClientHandler
             {
                 if (_clientSession == null)
                 {
+                    if (_do11Handshake && !IsHanshakeCompatableRequest(request))
+                    {
+                        return false;
+                    }
+
                     sessionStream = await ConnectAsync(request, cancel);
 
                     bool didHandshake = _do11Handshake;
@@ -85,8 +104,12 @@ namespace ClientHandler
                         HandshakeResponse handshake = await DoHandshakeAsync(sessionStream, request, cancel);
                         if (handshake.Result == HandshakeResult.NonUpgrade)
                         {
-                            throw new NotSupportedException("HTTP/1.1 handshake fallback not implemented: \r\n" 
-                                + FrameHelpers.GetAsciiAt(handshake.ResponseBytes));
+                            _fallbackTo11 = true;
+                            // TODO: Rather than resetting the connection, we could just download the response.
+                            sessionStream.Dispose();
+                            return false;
+                            /* throw new NotSupportedException("HTTP/1.1 handshake fallback not implemented: \r\n" 
+                                + FrameHelpers.GetAsciiAt(handshake.ResponseBytes)); */
                         }
                         else if (handshake.Result == HandshakeResult.UnexpectedControlFrame)
                         {
@@ -130,6 +153,12 @@ namespace ClientHandler
             {
                 _connectingLock.Release();
             }
+        }
+
+        // TODO: What are the official handshake restrictions?
+        private bool IsHanshakeCompatableRequest(HttpRequestMessage request)
+        {
+            return request.Method.Equals(HttpMethod.Get);
         }
 
         private Task<Stream> ConnectAsync(HttpRequestMessage request, CancellationToken cancel)

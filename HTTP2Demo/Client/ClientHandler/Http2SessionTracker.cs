@@ -13,10 +13,12 @@ namespace ClientHandler
     {
         private HttpMessageInvoker _fixedInvoker;
         private Http2SessionHandler _fixedHandler;
+        private HttpMessageHandler _fallbackhandler;
 
-        public Http2SessionTracker(bool do11Handshake)
+        public Http2SessionTracker(bool do11Handshake, HttpMessageHandler fallbackHandler)
         {
-            _fixedHandler = new Http2SessionHandler(do11Handshake);
+            _fallbackhandler = fallbackHandler;
+            _fixedHandler = new Http2SessionHandler(do11Handshake, _fallbackhandler);
             _fixedInvoker = new HttpMessageInvoker(_fixedHandler);
         }
 
@@ -29,6 +31,7 @@ namespace ClientHandler
 
         protected override void Dispose(bool disposing)
         {
+            _fallbackhandler.Dispose();
             _fixedInvoker.Dispose();
             base.Dispose(disposing);
         }
