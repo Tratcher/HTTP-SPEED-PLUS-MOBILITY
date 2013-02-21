@@ -6,9 +6,8 @@ namespace SharedProtocol.Framing
     {
         // For incoming
         public DataFrame(Frame preamble)
-            : base(new byte[preamble.FrameLength + Constants.FramePreambleSize])
+            : base(preamble)
         {
-            System.Buffer.BlockCopy(preamble.Buffer, 0, Buffer, 0, Constants.FramePreambleSize);
         }
 
         // For outgoing

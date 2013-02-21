@@ -1,35 +1,30 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace SharedProtocol.Framing
 {
-    public class RstStreamFrame : Frame
+    public class WindowUpdateFrame : Frame
     {
         // The number of bytes in the frame.
         private const int InitialFrameSize = 16;
-
+                
         // Incoming
-        public RstStreamFrame(Frame preamble)
+        public WindowUpdateFrame(Frame preamble)
             : base(preamble)
         {
         }
 
         // Outgoing
-        public RstStreamFrame(int id, ResetStatusCode statusCode)
+        public WindowUpdateFrame(int id, int delta)
             : base(new byte[InitialFrameSize])
         {
             IsControl = true;
             Version = Constants.CurrentProtocolVersion;
-            FrameType = ControlFrameType.RstStream;
+            FrameType = ControlFrameType.WindowUpdate;
             FrameLength = InitialFrameSize - Constants.FramePreambleSize; // 8
             StreamId = id;
-            StatusCode = statusCode;
+            Delta = delta;
         }
 
-        // 31 bits, 65-95
+        // 31 bits
         public int StreamId
         {
             get
@@ -42,16 +37,16 @@ namespace SharedProtocol.Framing
             }
         }
 
-        // 32 bits
-        public ResetStatusCode StatusCode
+        // 31 bits
+        public int Delta
         {
             get
             {
-                return (ResetStatusCode)FrameHelpers.Get32BitsAt(Buffer, 12);
+                return FrameHelpers.Get31BitsAt(Buffer, 12);
             }
             set
             {
-                FrameHelpers.Set32BitsAt(Buffer, 12, (int)value);
+                FrameHelpers.Set31BitsAt(Buffer, 12, value);
             }
         }
     }

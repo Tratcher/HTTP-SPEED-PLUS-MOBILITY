@@ -2,25 +2,25 @@
 
 namespace SharedProtocol.Framing
 {
-    public class SynReplyFrame : Frame
+    public class HeadersFrame : Frame
     {
         // The number of bytes in the frame, not including the compressed headers.
         private const int InitialFrameSize = 12;
 
-        // Create an incoming frame
-        public SynReplyFrame(Frame preamble)
+        // Incoming
+        public HeadersFrame(Frame preamble)
             : base(preamble)
         {
         }
 
-        // Create an outgoing frame
-        public SynReplyFrame(int streamId, byte[] compressedHeaders)
+        // Outgoing
+        public HeadersFrame(int streamId, byte[] compressedHeaders)
             : base(new byte[InitialFrameSize + compressedHeaders.Length])
         {
             IsControl = true;
             Version = Constants.CurrentProtocolVersion;
-            FrameType = ControlFrameType.SynReply;
-            FrameLength = Buffer.Length - Constants.FramePreambleSize;
+            FrameType = ControlFrameType.Headers;
+            FrameLength = InitialFrameSize - Constants.FramePreambleSize + compressedHeaders.Length;
             StreamId = streamId;
 
             // Copy in the headers

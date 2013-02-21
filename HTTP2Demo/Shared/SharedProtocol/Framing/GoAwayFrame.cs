@@ -1,36 +1,31 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace SharedProtocol.Framing
 {
-    public class RstStreamFrame : Frame
+    public class GoAwayFrame : Frame
     {
         // The number of bytes in the frame.
         private const int InitialFrameSize = 16;
 
         // Incoming
-        public RstStreamFrame(Frame preamble)
+        public GoAwayFrame(Frame preamble)
             : base(preamble)
         {
         }
 
         // Outgoing
-        public RstStreamFrame(int id, ResetStatusCode statusCode)
+        public GoAwayFrame(int lastStreamId, GoAwayStatusCode statusCode)
             : base(new byte[InitialFrameSize])
         {
             IsControl = true;
             Version = Constants.CurrentProtocolVersion;
-            FrameType = ControlFrameType.RstStream;
+            FrameType = ControlFrameType.GoAway;
             FrameLength = InitialFrameSize - Constants.FramePreambleSize; // 8
-            StreamId = id;
+            LastGoodStreamId = lastStreamId;
             StatusCode = statusCode;
         }
 
-        // 31 bits, 65-95
-        public int StreamId
+        // 31 bits
+        public int LastGoodStreamId
         {
             get
             {
@@ -43,11 +38,11 @@ namespace SharedProtocol.Framing
         }
 
         // 32 bits
-        public ResetStatusCode StatusCode
+        public GoAwayStatusCode StatusCode
         {
             get
             {
-                return (ResetStatusCode)FrameHelpers.Get32BitsAt(Buffer, 12);
+                return (GoAwayStatusCode)FrameHelpers.Get32BitsAt(Buffer, 12);
             }
             set
             {

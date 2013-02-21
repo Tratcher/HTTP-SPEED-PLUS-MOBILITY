@@ -12,10 +12,9 @@ namespace SharedProtocol.Framing
         private const int InitialFrameSize = 12;
 
         // Incoming
-        public SettingsFrame(Frame preable)
-            : base(new byte[Constants.FramePreambleSize + preable.FrameLength])
+        public SettingsFrame(Frame preamble)
+            : base(preamble)
         {
-            System.Buffer.BlockCopy(preable.Buffer, 0, Buffer, 0, Constants.FramePreambleSize);
         }
 
         // Outgoing
@@ -41,6 +40,11 @@ namespace SharedProtocol.Framing
             {
                 FrameHelpers.Set32BitsAt(Buffer, 8, value);
             }
+        }
+
+        public ArraySegment<byte> SettingsBlob
+        {
+            get { return new ArraySegment<byte>(Buffer, InitialFrameSize, FrameLength - InitialFrameSize); }
         }
     }
 }

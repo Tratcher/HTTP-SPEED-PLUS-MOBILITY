@@ -40,10 +40,32 @@ namespace SharedProtocol.Framing
             }
             switch (preamble.FrameType)
             {
-                case ControlFrameType.SynStream:
-                    return new SynStreamFrame(preamble);
+                case ControlFrameType.Credential:
+                    return new CredentialFrame(preamble);
+
+                case ControlFrameType.GoAway:
+                    return new GoAwayFrame(preamble);
+
+                case ControlFrameType.Headers:
+                    return new HeadersFrame(preamble);
+
+                case ControlFrameType.Ping:
+                    return new PingFrame(preamble);
+
+                case ControlFrameType.RstStream:
+                    return new RstStreamFrame(preamble);
+
+                case ControlFrameType.Settings:
+                    return new SettingsFrame(preamble);
+
                 case ControlFrameType.SynReply:
                     return new SynReplyFrame(preamble);
+
+                case ControlFrameType.SynStream:
+                    return new SynStreamFrame(preamble);
+
+                case ControlFrameType.WindowUpdate:
+                    return new WindowUpdateFrame(preamble);
 
                 default:
                     throw new NotImplementedException("Frame type: " + preamble.FrameType);
@@ -56,6 +78,7 @@ namespace SharedProtocol.Framing
             while (totalRead < count)
             {
                 cancel.ThrowIfCancellationRequested();
+                // TODO: Over-read into a buffer to reduce the number of native read operations.
                 int read = await _stream.ReadAsync(buffer, offset + totalRead, count - totalRead, cancel);
                 if (read <= 0)
                 {

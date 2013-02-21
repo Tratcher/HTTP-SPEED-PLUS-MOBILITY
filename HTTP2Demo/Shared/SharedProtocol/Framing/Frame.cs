@@ -16,12 +16,21 @@ namespace SharedProtocol.Framing
     {
         private byte[] _buffer;
 
+        // For reading the preamble to determine the frame type
         public Frame()
             : this(new byte[Constants.FramePreambleSize])
         {
         }
 
-        public Frame(byte[] buffer)
+        // For incoming frames
+        protected Frame(Frame preamble)
+            : this(new byte[Constants.FramePreambleSize + preamble.FrameLength])
+        {
+            System.Buffer.BlockCopy(preamble.Buffer, 0, Buffer, 0, Constants.FramePreambleSize);
+        }
+
+        // For outgoing frames
+        protected Frame(byte[] buffer)
         {
             _buffer = buffer;
         }

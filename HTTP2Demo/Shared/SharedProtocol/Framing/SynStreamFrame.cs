@@ -24,9 +24,8 @@ namespace SharedProtocol.Framing
 
         // Create an incoming frame
         public SynStreamFrame(Frame preamble)
-            : base(new byte[preamble.FrameLength + Constants.FramePreambleSize])
+            : base(preamble)
         {
-            System.Buffer.BlockCopy(preamble.Buffer, 0, Buffer, 0, Constants.FramePreambleSize);
         }
 
         // 31 bits, 65-95

@@ -51,8 +51,6 @@ namespace ServerProtocol
             _synFrame = synFrame;
         }
 
-        public int Id { get { return _id; } }
-
         public IDictionary<string, object> Environment { get { return _environment; } }
 
         // We've been offloaded onto a new thread. Decode the headers, invoke next, and do cleanup processing afterwards
@@ -241,7 +239,7 @@ namespace ServerProtocol
             headerBytes = _compressor.Compress(headerBytes);
 
             // Prepare a SynReply frame and queue it
-            SynReplyFrame synFrame = new SynReplyFrame(headerBytes, _id);
+            SynReplyFrame synFrame = new SynReplyFrame(_id, headerBytes);
             if (headersOnly)
             {
                 synFrame.Flags = FrameFlags.Fin;
