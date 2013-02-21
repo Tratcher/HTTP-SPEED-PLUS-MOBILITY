@@ -97,7 +97,7 @@ namespace SharedProtocol.Framing
         }
 
         // 24 bits, 40-63
-        public int Length
+        public int FrameLength
         {
             get
             {

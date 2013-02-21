@@ -6,7 +6,7 @@ namespace SharedProtocol.Framing
     {
         // For incoming
         public DataFrame(Frame preamble)
-            : base(new byte[preamble.Length + Constants.FramePreambleSize])
+            : base(new byte[preamble.FrameLength + Constants.FramePreambleSize])
         {
             System.Buffer.BlockCopy(preamble.Buffer, 0, Buffer, 0, Constants.FramePreambleSize);
         }
@@ -16,7 +16,7 @@ namespace SharedProtocol.Framing
             : base(new byte[Constants.FramePreambleSize + data.Count])
         {
             IsControl = false;
-            Length = data.Count;
+            FrameLength = data.Count;
             DataStreamId = streamId;
             System.Buffer.BlockCopy(data.Array, data.Offset, Buffer, Constants.FramePreambleSize, data.Count);
         }
@@ -26,7 +26,7 @@ namespace SharedProtocol.Framing
             : base(new byte[Constants.FramePreambleSize])
         {
             IsControl = false;
-            Length = 0;
+            FrameLength = 0;
             DataStreamId = streamId;
             Flags = FrameFlags.Fin;
         }

@@ -15,7 +15,7 @@ namespace SharedProtocol.Framing
             IsControl = true;
             Version = Constants.CurrentProtocolVersion;
             FrameType = ControlFrameType.SynReply;
-            Length = Buffer.Length - Constants.FramePreambleSize;
+            FrameLength = Buffer.Length - Constants.FramePreambleSize;
             StreamId = streamId;
 
             // Copy in the headers
@@ -24,7 +24,7 @@ namespace SharedProtocol.Framing
 
         // Create an incoming frame
         public SynReplyFrame(Frame preamble)
-            : base(new byte[preamble.Length + Constants.FramePreambleSize])
+            : base(new byte[preamble.FrameLength + Constants.FramePreambleSize])
         {
             System.Buffer.BlockCopy(preamble.Buffer, 0, Buffer, 0, Constants.FramePreambleSize);
         }
