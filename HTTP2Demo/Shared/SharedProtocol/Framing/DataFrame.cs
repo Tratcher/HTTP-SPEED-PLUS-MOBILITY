@@ -30,7 +30,7 @@ namespace SharedProtocol.Framing
             IsControl = false;
             FrameLength = 0;
             StreamId = streamId;
-            Flags = FrameFlags.Fin;
+            IsFin = true;
         }
 
         // 31 bits, 1-31, Data frame only

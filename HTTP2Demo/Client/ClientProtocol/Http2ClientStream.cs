@@ -14,16 +14,22 @@ namespace ClientProtocol
     public class Http2ClientStream : Http2BaseStream
     {
         private TaskCompletionSource<SynReplyFrame> _responseTask;
+        private Stream _outputStream;
 
         public Http2ClientStream(int id, WriteQueue writeQueue, CancellationToken cancel)
             : base(id, writeQueue, cancel)
         {
             _responseTask = new TaskCompletionSource<SynReplyFrame>();
+            _outputStream = new OutputStream(id, writeQueue);
         }
-        
-        public Task<SynReplyFrame> GetResponseAsync()
+
+        public Stream RequestStream
         {
-            return _responseTask.Task;
+            get
+            {
+                // TODO: Assert request sent
+                return _outputStream;
+            }
         }
 
         public Stream ResponseStream
@@ -44,7 +50,7 @@ namespace ClientProtocol
         public void SetReply(SynReplyFrame frame)
         {
             Contract.Assert(!_responseTask.Task.IsCompleted);
-            if ((frame.Flags & FrameFlags.Fin) == FrameFlags.Fin)
+            if (frame.IsFin)
             {
                 _incomingStream = Stream.Null;
             }
@@ -53,6 +59,18 @@ namespace ClientProtocol
                 _incomingStream = new QueueStream();
             }
             _responseTask.TrySetResult(frame);
+        }
+        
+        public Task<SynReplyFrame> GetResponseAsync()
+        {
+            return _responseTask.Task;
+        }
+
+        // Send a Fin frame
+        public void EndRequest()
+        {
+            DataFrame terminator = new DataFrame(_id);
+            _writeQueue.WriteFrameAsync(terminator, _cancel);
         }
     }
 }

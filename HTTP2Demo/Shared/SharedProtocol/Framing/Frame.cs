@@ -94,6 +94,26 @@ namespace SharedProtocol.Framing
             }
         }
 
+        // 8 bits, 32-39
+        public bool IsFin
+        {
+            get
+            {
+                return (Flags & FrameFlags.Fin) == FrameFlags.Fin;
+            }
+            set
+            {
+                if (value)
+                {
+                    Flags |= FrameFlags.Fin;
+                }
+                else
+                {
+                    Flags = Flags & ~FrameFlags.Fin;
+                }
+            }
+        }
+
         // 24 bits, 40-63
         public int FrameLength
         {

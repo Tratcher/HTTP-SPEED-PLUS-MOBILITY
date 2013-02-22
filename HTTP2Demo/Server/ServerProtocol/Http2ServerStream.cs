@@ -48,6 +48,15 @@ namespace ServerProtocol
             : this(synFrame.StreamId, transportInfo, writeQueue, cancel)
         {
             _synFrame = synFrame;
+            if (synFrame.IsFin)
+            {
+                // TODO: Set stream state to request body complete and RST the stream if additional frames arrive.
+                _incomingStream = Stream.Null;
+            }
+            else
+            {
+                _incomingStream = new QueueStream();
+            }
         }
 
         public IDictionary<string, object> Environment { get { return _environment; } }
@@ -128,27 +137,14 @@ namespace ServerProtocol
                     // TODO: Lazy cert key
                 }
 
-                // TODO: Request body
-
+                _owinRequest.Body = _incomingStream;
                 _synFrame = null;
             }
 
-            _owinResponse.Body = new ResponseStream(_id, _writeQueue, StartResponse);
+            _owinResponse.Body = new OutputStream(_id, _writeQueue, StartResponse);
         }
 
         // Includes method, path&query, version, host, scheme.
-        // +------------------------------------+
-        // | Number of Name/Value pairs (int32) |
-        // +------------------------------------+
-        // |     Length of name (int32)         |
-        // +------------------------------------+
-        // |           Name (string)            |
-        // +------------------------------------+
-        // |     Length of value  (int32)       |
-        // +------------------------------------+
-        // |          Value   (string)          |
-        // +------------------------------------+
-        // |           (repeats)                |
         private void DeserializeRequestHeaders()
         {
             Contract.Assert(_synFrame != null);
@@ -241,7 +237,7 @@ namespace ServerProtocol
             SynReplyFrame synFrame = new SynReplyFrame(_id, headerBytes);
             if (headersOnly)
             {
-                synFrame.Flags = FrameFlags.Fin;
+                synFrame.IsFin = true;
             }
 
             _writeQueue.WriteFrameAsync(synFrame, CancellationToken.None);

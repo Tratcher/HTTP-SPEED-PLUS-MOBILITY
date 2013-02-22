@@ -49,7 +49,6 @@
   <ItemGroup>
     <Compile Include="Constants.cs" />
     <Compile Include="Http2ServerStream.cs" />
-    <Compile Include="ResponseStream.cs" />
     <Compile Include="TransportInformation.cs" />
     <Compile Include="Http2ServerSession.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

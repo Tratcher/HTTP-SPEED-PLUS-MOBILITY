@@ -1,22 +1,23 @@
-﻿using SharedProtocol;
-using SharedProtocol.Framing;
+﻿using SharedProtocol.Framing;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ServerProtocol
+namespace SharedProtocol
 {
-    public class ResponseStream : Stream
+    public class OutputStream : Stream
     {
         private WriteQueue _writeQueue;
         private Action _onStart;
         private int _streamId;
 
-        public ResponseStream(int streamId, WriteQueue writeQueue, Action onStart)
+        public OutputStream(int streamId, WriteQueue writeQueue)
+            : this (streamId, writeQueue, () => {})
+        {
+        }
+
+        public OutputStream(int streamId, WriteQueue writeQueue, Action onStart)
         {
             _streamId = streamId;
             _writeQueue = writeQueue;

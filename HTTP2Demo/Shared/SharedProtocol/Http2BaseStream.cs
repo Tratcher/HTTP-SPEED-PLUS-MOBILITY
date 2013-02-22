@@ -47,9 +47,9 @@ namespace SharedProtocol
             ArraySegment<byte> data = dataFrame.Data;
             // TODO: Decompression?
             _incomingStream.Write(data.Array, data.Offset, data.Count);
-            if ((dataFrame.Flags & FrameFlags.Fin) == FrameFlags.Fin)
+            if (dataFrame.IsFin)
             {
-                // TODO: How can we signal the difference between an aborted stream and a finishes stream?
+                // TODO: How can we signal the difference between an aborted stream and a finished stream? CancellationToken?
                 _incomingStream.Dispose();
             }
         }

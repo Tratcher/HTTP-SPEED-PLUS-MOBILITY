@@ -74,7 +74,7 @@ namespace ClientHandler
             // Submit the request and start uploading any data. (What about 100-Continues?)
             else
             {
-                stream = SubmitRequest(request, cancellationToken);
+                stream = await SubmitRequest(request, cancellationToken);
             }
             
             // Build the response
@@ -189,7 +189,7 @@ namespace ClientHandler
             // throw new NotImplementedException();
         }
 
-        private Http2ClientStream SubmitRequest(HttpRequestMessage request, CancellationToken cancellationToken)
+        private async Task<Http2ClientStream> SubmitRequest(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Http2ClientStream clientStream = _clientSession.CreateStream(cancellationToken);
             
@@ -237,10 +237,24 @@ namespace ClientHandler
 
             // TODO: Set priority from request.Properties
 
-            // TODO: Uploads?
-            frame.Flags = FrameFlags.Fin;
+            // TODO: How do I correctly determine if a request has a body?
+            bool hasRequestBody = (request.Content != null);
 
+            frame.IsFin = !hasRequestBody;
             clientStream.StartRequest(frame);
+
+            // TODO: Upload
+            if (hasRequestBody)
+            {
+                // TODO: 100-Continues?
+                // TODO: no-blocking upload so we can start consuming the response in parallel?
+                Stream requestBody = clientStream.RequestStream;
+                await request.Content.CopyToAsync(requestBody);
+                // TODO: Send trailer headers
+                // Send FIN frame
+                clientStream.EndRequest();
+            }
+
             return clientStream;
         }
 
