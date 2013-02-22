@@ -49,6 +49,7 @@
     <Compile Include="Compression\ZOutputStreamExt.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="DuplexStream.cs" />
+    <Compile Include="Framing\ControlFrame.cs" />
     <Compile Include="Framing\CredentialFrame.cs" />
     <Compile Include="Framing\DataFrame.cs" />
     <Compile Include="Framing\Frame.cs" />

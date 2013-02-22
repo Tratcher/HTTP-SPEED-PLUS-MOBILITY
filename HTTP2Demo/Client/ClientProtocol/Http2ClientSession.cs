@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace ClientProtocol
 {
-    public class Http2ClientSession : Http2BaseSession
+    public class Http2ClientSession : Http2BaseSession<Http2ClientStream>
     {
         private int _lastId = -1;
 
@@ -27,11 +27,6 @@ namespace ClientProtocol
             }
         }
 
-        public Http2ClientStream GetStream(int id)
-        {
-            return (Http2ClientStream)_activeStreams[id];
-        }
-
         public void Dispose()
         {
             _sessionStream.Dispose();
@@ -39,41 +34,25 @@ namespace ClientProtocol
 
         protected override void DispatchIncomingFrame(Frame frame)
         {
-            Http2BaseStream stream;
+            Http2ClientStream stream;
             if (frame.IsControl)
             {
                 switch (frame.FrameType)
                 {
-                    // New incoming request stream
                     case ControlFrameType.SynReply:
                         SynReplyFrame synReply = (SynReplyFrame)frame;
-                        if (!_activeStreams.TryGetValue(synReply.StreamId, out stream))
-                        {
-                            // TODO: Session already gone? Send a reset?
-                            throw new NotImplementedException("Stream id not found: " + frame.DataStreamId);
-                        }
-                        else
-                        {
-                            Http2ClientStream clientStream = (Http2ClientStream)stream;
-                            clientStream.SetReply(synReply);
-                        }
+                        stream = GetStream(synReply.StreamId);
+                        stream.SetReply(synReply);
                         break;
 
                     default:
-                        throw new NotImplementedException("Cannot dispatch frame type: " + frame.FrameType);
+                        base.DispatchIncomingFrame(frame);
+                        break;
                 }
             }
             else
             {
-                if (!_activeStreams.TryGetValue(frame.DataStreamId, out stream))
-                {
-                    // TODO: Session already gone? Send a reset?
-                    throw new NotImplementedException("Stream id not found: " + frame.DataStreamId);
-                }
-                else
-                {
-                    stream.ReceiveData((DataFrame)frame);
-                }
+                base.DispatchIncomingFrame(frame);
             }
         }
 

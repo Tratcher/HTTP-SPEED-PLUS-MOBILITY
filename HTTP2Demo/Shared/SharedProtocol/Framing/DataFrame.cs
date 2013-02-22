@@ -2,6 +2,9 @@
 
 namespace SharedProtocol.Framing
 {
+    // |C|       Stream-ID (31bits)       |
+    // +----------------------------------+
+    // | Flags (8)  |  Length (24 bits)   |
     public class DataFrame : Frame
     {
         // For incoming
@@ -16,7 +19,7 @@ namespace SharedProtocol.Framing
         {
             IsControl = false;
             FrameLength = data.Count;
-            DataStreamId = streamId;
+            StreamId = streamId;
             System.Buffer.BlockCopy(data.Array, data.Offset, Buffer, Constants.FramePreambleSize, data.Count);
         }
 
@@ -26,8 +29,21 @@ namespace SharedProtocol.Framing
         {
             IsControl = false;
             FrameLength = 0;
-            DataStreamId = streamId;
+            StreamId = streamId;
             Flags = FrameFlags.Fin;
+        }
+
+        // 31 bits, 1-31, Data frame only
+        public int StreamId
+        {
+            get
+            {
+                return FrameHelpers.Get31BitsAt(Buffer, 0);
+            }
+            set
+            {
+                FrameHelpers.Set31BitsAt(Buffer, 0, value);
+            }
         }
 
         public ArraySegment<byte> Data

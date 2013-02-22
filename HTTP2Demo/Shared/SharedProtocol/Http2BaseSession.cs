@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 
 namespace SharedProtocol
 {
-    public abstract class Http2BaseSession
+    public abstract class Http2BaseSession<T> where T: Http2BaseStream
     {
         protected bool _goAwayReceived;
-        protected ConcurrentDictionary<int, Http2BaseStream> _activeStreams;
+        protected ConcurrentDictionary<int, T> _activeStreams;
         protected FrameReader _frameReader;
         protected WriteQueue _writeQueue;
         protected Stream _sessionStream;
@@ -20,7 +20,7 @@ namespace SharedProtocol
         protected Http2BaseSession()
         {
             _goAwayReceived = false;
-            _activeStreams = new ConcurrentDictionary<int, Http2BaseStream>();
+            _activeStreams = new ConcurrentDictionary<int, T>();
         }
 
         public Task StartPumps()
@@ -43,12 +43,41 @@ namespace SharedProtocol
             }
         }
 
-        protected abstract void DispatchIncomingFrame(Frame frame);
+        protected virtual void DispatchIncomingFrame(Frame frame)
+        {
+            T stream;
+            if (frame.IsControl)
+            {
+                switch (frame.FrameType)
+                {
+
+                    default:
+                        throw new NotImplementedException(frame.FrameType.ToString());
+                }
+            }
+            else
+            {
+                DataFrame dataFrame = (DataFrame)frame;
+                stream = GetStream(dataFrame.StreamId);
+                stream.ReceiveData(dataFrame);
+            }
+        }
 
         // Manage the outgoing queue of requests.
         private Task PumpOutgoingData()
         {
             return _writeQueue.PumpToStreamAsync();
+        }
+
+        public T GetStream(int id)
+        {
+            T stream;
+            if (!_activeStreams.TryGetValue(id, out stream))
+            {
+                // TODO: Session already gone? Send a reset?
+                throw new NotImplementedException("Stream id not found: " + id);
+            }
+            return stream;
         }
     }
 }

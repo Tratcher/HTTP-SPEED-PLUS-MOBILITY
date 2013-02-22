@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedProtocol.Framing
 {
-    public class RstStreamFrame : Frame
+    public class RstStreamFrame : ControlFrame
     {
         // The number of bytes in the frame.
         private const int InitialFrameSize = 16;
@@ -21,8 +21,6 @@ namespace SharedProtocol.Framing
         public RstStreamFrame(int id, ResetStatusCode statusCode)
             : base(new byte[InitialFrameSize])
         {
-            IsControl = true;
-            Version = Constants.CurrentProtocolVersion;
             FrameType = ControlFrameType.RstStream;
             FrameLength = InitialFrameSize - Constants.FramePreambleSize; // 8
             StreamId = id;

@@ -1,7 +1,7 @@
 ﻿
 namespace SharedProtocol.Framing
 {
-    public class WindowUpdateFrame : Frame
+    public class WindowUpdateFrame : ControlFrame
     {
         // The number of bytes in the frame.
         private const int InitialFrameSize = 16;
@@ -16,8 +16,6 @@ namespace SharedProtocol.Framing
         public WindowUpdateFrame(int id, int delta)
             : base(new byte[InitialFrameSize])
         {
-            IsControl = true;
-            Version = Constants.CurrentProtocolVersion;
             FrameType = ControlFrameType.WindowUpdate;
             FrameLength = InitialFrameSize - Constants.FramePreambleSize; // 8
             StreamId = id;

@@ -1,7 +1,7 @@
 ﻿
 namespace SharedProtocol.Framing
 {
-    public class GoAwayFrame : Frame
+    public class GoAwayFrame : ControlFrame
     {
         // The number of bytes in the frame.
         private const int InitialFrameSize = 16;
@@ -16,8 +16,6 @@ namespace SharedProtocol.Framing
         public GoAwayFrame(int lastStreamId, GoAwayStatusCode statusCode)
             : base(new byte[InitialFrameSize])
         {
-            IsControl = true;
-            Version = Constants.CurrentProtocolVersion;
             FrameType = ControlFrameType.GoAway;
             FrameLength = InitialFrameSize - Constants.FramePreambleSize; // 8
             LastGoodStreamId = lastStreamId;

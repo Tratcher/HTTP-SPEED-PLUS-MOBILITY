@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedProtocol.Framing
 {
-    public class SettingsFrame : Frame
+    public class SettingsFrame : ControlFrame
     {
         // The number of bytes in the frame.
         private const int InitialFrameSize = 12;
@@ -21,8 +21,6 @@ namespace SharedProtocol.Framing
         public SettingsFrame(int entryCount, byte[] settings)
             : base(new byte[InitialFrameSize + settings.Length])
         {
-            IsControl = true;
-            Version = Constants.CurrentProtocolVersion;
             FrameType = ControlFrameType.Settings;
             FrameLength = settings.Length + InitialFrameSize - Constants.FramePreambleSize;
             EntryCount = entryCount;

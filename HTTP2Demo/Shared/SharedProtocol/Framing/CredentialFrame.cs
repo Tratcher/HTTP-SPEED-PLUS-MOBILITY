@@ -2,7 +2,7 @@
 
 namespace SharedProtocol.Framing
 {
-    public class CredentialFrame : Frame
+    public class CredentialFrame : ControlFrame
     {
         // The frame size in bytes except for the proof body and certificate blocks
         private const int InitialFrameSize = 16;
@@ -17,8 +17,6 @@ namespace SharedProtocol.Framing
         public CredentialFrame(int slot, ArraySegment<byte> proof, ArraySegment<byte> certificateList)
             : base(new byte[InitialFrameSize + proof.Count + certificateList.Count])
         {
-            IsControl = true;
-            Version = Constants.CurrentProtocolVersion;
             FrameType = ControlFrameType.Credential;
             FrameLength = InitialFrameSize - Constants.FramePreambleSize + proof.Count + certificateList.Count;
 

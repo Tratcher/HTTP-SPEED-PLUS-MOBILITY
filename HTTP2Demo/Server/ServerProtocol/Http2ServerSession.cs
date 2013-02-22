@@ -15,7 +15,7 @@ namespace ServerProtocol
 {
     using AppFunc = Func<IDictionary<string, object>, Task>;
 
-    public class Http2ServerSession : Http2BaseSession
+    public class Http2ServerSession : Http2BaseSession<Http2ServerStream>
     {
         private AppFunc _next;
         private X509Certificate[] _clientCerts;
@@ -89,29 +89,20 @@ namespace ServerProtocol
                     // New incoming request stream
                     case ControlFrameType.SynStream:
                         SynStreamFrame synFrame = (SynStreamFrame)frame;
+                        // TODO: Validate this stream ID is in the correct sequence and not already in use.
                         Http2ServerStream stream = new Http2ServerStream(synFrame, _transportInfo, _writeQueue, _cancel);
                         DispatchNewStream(synFrame.StreamId, stream);
-                        return;
+                        break;
 
                     default:
-                        throw new NotImplementedException("Cannot dispatch frame type: " + frame.FrameType);
+                        base.DispatchIncomingFrame(frame);
+                        break;
                 }
             }
             else
             {
-                Http2BaseStream stream;
-                if (!_activeStreams.TryGetValue(frame.DataStreamId, out stream))
-                {
-                    // TODO: Session already gone? Send a reset?
-                    throw new NotImplementedException("Stream id not found: " + frame.DataStreamId);
-                }
-                else
-                {
-                    stream.ReceiveData((DataFrame)frame);
-                }
-                return;
+                base.DispatchIncomingFrame(frame);
             }
-            throw new NotImplementedException();
         }
     }
 }

@@ -1,21 +1,20 @@
 ﻿using Owin.Types;
-using SharedProtocol.Compression;
+using SharedProtocol;
 using SharedProtocol.Framing;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Globalization;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using SharedProtocol;
 
 namespace ServerProtocol
 {
     using AppFunc = Func<IDictionary<string, object>, Task>;
-    using System.Collections;
 
-    internal class Http2ServerStream : Http2BaseStream
+    public class Http2ServerStream : Http2BaseStream
     {
         private TransportInformation _transportInfo;
         private IDictionary<string, object> _environment;

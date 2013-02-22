@@ -3,7 +3,7 @@ using System.Diagnostics.Contracts;
 
 namespace SharedProtocol.Framing
 {
-    public class SynStreamFrame : Frame
+    public class SynStreamFrame : ControlFrame
     {
         // The number of bytes in the frame, not including the compressed headers.
         private const int InitialFrameSize = 18;
@@ -12,8 +12,6 @@ namespace SharedProtocol.Framing
         public SynStreamFrame(int streamId, byte[] headerBytes)
             : base(new byte[InitialFrameSize + headerBytes.Length])
         {
-            IsControl = true;
-            Version = Constants.CurrentProtocolVersion;
             FrameType = ControlFrameType.SynStream;
             FrameLength = Buffer.Length - Constants.FramePreambleSize;
             StreamId = streamId;

@@ -1,7 +1,7 @@
 ﻿
 namespace SharedProtocol.Framing
 {
-    public class PingFrame : Frame
+    public class PingFrame : ControlFrame
     {
         // The number of bytes in the frame.
         private const int InitialFrameSize = 12;
@@ -16,8 +16,6 @@ namespace SharedProtocol.Framing
         public PingFrame(int pingId)
             : base(new byte[InitialFrameSize])
         {
-            IsControl = true;
-            Version = Constants.CurrentProtocolVersion;
             FrameType = ControlFrameType.Ping;
             FrameLength = InitialFrameSize - Constants.FramePreambleSize; // 4
             Id = pingId;
