@@ -1,33 +1,30 @@
 ﻿using ClientProtocol;
 using ServerProtocol;
 using SharedProtocol;
-using SharedProtocol.Framing;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace ProtocolIntegration.Tests
 {
-    using System.IO;
     using AppFunc = Func<IDictionary<string, object>, Task>;
 
     // Connect and share only binary frames
     public class BinaryInteropTests
     {
         [Fact]
-        public async Task StartAndStop()
+        public Task StartAndStop()
         {
-            await RunSessionAsync(StatusCodeOnlyResponse, (cs, ss) => Task.FromResult<object>(null));
+            return RunSessionAsync(StatusCodeOnlyResponse, (cs, ss) => Task.FromResult<object>(null));
         }
 
         [Fact]
-        public async Task SimpleStatusCodeResponse()
+        public Task SimpleStatusCodeResponse()
         {
-            await RunSessionAsync(StatusCodeOnlyResponse, async (clientSession, serverSession) =>
+            return RunSessionAsync(StatusCodeOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("GET");
                 Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, false, CancellationToken.None);
@@ -42,9 +39,9 @@ namespace ProtocolIntegration.Tests
         }
 
         [Fact]
-        public async Task HelloWorldResponse()
+        public Task HelloWorldResponse()
         {
-            await RunSessionAsync(HelloWorldOnlyResponse, async (clientSession, serverSession) =>
+            return RunSessionAsync(HelloWorldOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("POST");
                 Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, false, CancellationToken.None);
@@ -62,9 +59,9 @@ namespace ProtocolIntegration.Tests
         }
 
         [Fact]
-        public async Task HelloWorldAsyncResponse()
+        public Task HelloWorldAsyncResponse()
         {
-            await RunSessionAsync(HelloWorldAsyncOnlyResponse, async (clientSession, serverSession) =>
+            return RunSessionAsync(HelloWorldAsyncOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("POST");
                 Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, false, CancellationToken.None);
@@ -82,9 +79,9 @@ namespace ProtocolIntegration.Tests
         }
 
         [Fact]
-        public async Task EchoHelloWorldResponse()
+        public Task EchoHelloWorldResponse()
         {
-            await RunSessionAsync(EchoOnlyResponse, async (clientSession, serverSession) =>
+            return RunSessionAsync(EchoOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("POST");
                 Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, true, CancellationToken.None);
@@ -109,9 +106,9 @@ namespace ProtocolIntegration.Tests
         }
 
         [Fact]
-        public async Task EchoHelloWorldAsyncResponse()
+        public Task EchoHelloWorldAsyncResponse()
         {
-            await RunSessionAsync(EchoAsyncOnlyResponse, async (clientSession, serverSession) =>
+            return RunSessionAsync(EchoAsyncOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("POST");
                 Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, true, CancellationToken.None);

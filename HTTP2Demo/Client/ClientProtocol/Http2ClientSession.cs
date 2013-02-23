@@ -18,6 +18,7 @@ namespace ClientProtocol
 
         public Http2ClientSession(bool createHanshakeStream, CancellationToken handshakeCancel)
         {
+            _nextPingId = 1; // Client pings are odd
             if (createHanshakeStream)
             {
                 // The HTTP/1.1 handshake already happened, we're just waiting for the first 2.0 control frame response

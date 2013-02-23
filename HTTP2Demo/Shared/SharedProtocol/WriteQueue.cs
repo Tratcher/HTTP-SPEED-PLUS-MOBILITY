@@ -18,12 +18,14 @@ namespace SharedProtocol
         private Stream _stream;
         private ManualResetEvent _dataAvailable;
         private bool _disposed;
+        private TaskCompletionSource<object> _readWaitingForData;
 
         public WriteQueue(Stream stream)
         {
             _messageQueue = new ConcurrentQueue<QueueEntry>();
             _stream = stream;
             _dataAvailable = new ManualResetEvent(false);
+            _readWaitingForData = new TaskCompletionSource<object>();
         }
 
         // Queue up a fully rendered frame to send
@@ -31,7 +33,7 @@ namespace SharedProtocol
         {
             QueueEntry entry = new QueueEntry(frame.Buffer, cancel);
             _messageQueue.Enqueue(entry);
-            _dataAvailable.Set();
+            SignalDataAvailable();
             return entry.Task;
         }
 
@@ -46,7 +48,7 @@ namespace SharedProtocol
 
             QueueEntry entry = new QueueEntry(null, cancel);
             _messageQueue.Enqueue(entry);
-            _dataAvailable.Set();
+            SignalDataAvailable();
             return entry.Task;
         }
 
@@ -78,12 +80,28 @@ namespace SharedProtocol
                         entry.Fail(ex);
                     }
                 }
-                
-                // TODO: What kind of recurring signal can we use here that won't block the thread?
-                // _dataAvailable.WaitOne();
-                // _dataAvailable.Reset();
-                await Task.Delay(1000);
+
+                await WaitForDataAsync();
             }
+        }
+
+        private void SignalDataAvailable()
+        {
+            // Dispatch, as TrySetResult will synchronously execute the waiters callback and block our Write.
+            Task.Run(() => _readWaitingForData.TrySetResult(null));
+        }
+
+        private Task WaitForDataAsync()
+        {
+            _readWaitingForData = new TaskCompletionSource<object>();
+
+            if (!_messageQueue.IsEmpty || _disposed)
+            {
+                // Race, data could have arrived before we created the TCS.
+                _readWaitingForData.TrySetResult(null);
+            }
+
+            return _readWaitingForData.Task;
         }
 
         public void Dispose()

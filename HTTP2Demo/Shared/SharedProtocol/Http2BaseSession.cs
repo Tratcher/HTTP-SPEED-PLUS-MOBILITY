@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -17,6 +18,8 @@ namespace SharedProtocol
         protected FrameReader _frameReader;
         protected WriteQueue _writeQueue;
         protected Stream _sessionStream;
+        protected Ping _currentPing;
+        protected int _nextPingId;
         protected CancellationToken _cancel;
         protected bool _disposed;
 
@@ -62,7 +65,10 @@ namespace SharedProtocol
             {
                 switch (frame.FrameType)
                 {
-
+                    case ControlFrameType.Ping:
+                        PingFrame pingFrame = (PingFrame)frame;
+                        ReceivePing(pingFrame.Id);
+                        break;
                     default:
                         throw new NotImplementedException(frame.FrameType.ToString());
                 }
@@ -92,6 +98,35 @@ namespace SharedProtocol
             return stream;
         }
 
+        public Task<TimeSpan> PingAsync()
+        {
+            Contract.Assert(_currentPing == null || _currentPing.Task.IsCompleted);
+            Ping ping = new Ping(_nextPingId);
+            _nextPingId += 2;
+            _currentPing = ping;
+            PingFrame pingFrame = new PingFrame(_currentPing.Id);
+            _writeQueue.WriteFrameAsync(pingFrame, CancellationToken.None);
+            return ping.Task;
+        }
+
+        public void ReceivePing(int id)
+        {
+            // Even or odd?
+            if (id % 2 != _nextPingId % 2)
+            {
+                // Not one of ours, response ASAP
+                _writeQueue.WriteFrameAsync(new PingFrame(id), CancellationToken.None);
+                return;
+            }
+
+            Ping currentPing = _currentPing;
+            if (currentPing != null && id == currentPing.Id)
+            {
+                currentPing.Complete();
+            }
+            // Ignore extra pings
+        }
+
         public void Dispose()
         {
             Dispose(true);
@@ -105,9 +140,17 @@ namespace SharedProtocol
                 return;
             }
 
+            // TODO: Dispose of all streams
+
             if (_writeQueue != null)
             {
                 _writeQueue.Dispose();
+            }
+
+            Ping currentPing = _currentPing;
+            if (currentPing != null)
+            {
+                currentPing.Cancel();
             }
 
             // Just disposing of the stream should stop the FrameReader and the WriteQueue

@@ -30,6 +30,7 @@ namespace ServerProtocol
             _clientCerts = new X509Certificate[Constants.DefaultClientCertVectorSize];
             _clientCerts[0] = _transportInfo.ClientCertificate;
             _upgradeRequest = upgradeRequest;
+            _nextPingId = 2; // Server pings are even
         }
 
         public override Task Start(Stream stream, CancellationToken cancel)
