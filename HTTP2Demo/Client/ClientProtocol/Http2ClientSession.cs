@@ -2,8 +2,10 @@
 using SharedProtocol.Framing;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,12 +16,8 @@ namespace ClientProtocol
     {
         private int _lastId = -1;
 
-        public Http2ClientSession(Stream sessionStream, bool createHanshakeStream, CancellationToken handshakeCancel)
+        public Http2ClientSession(bool createHanshakeStream, CancellationToken handshakeCancel)
         {
-            _sessionStream = sessionStream;
-            _writeQueue = new WriteQueue(_sessionStream);
-            _frameReader = new FrameReader(_sessionStream, CancellationToken.None);
-
             if (createHanshakeStream)
             {
                 // The HTTP/1.1 handshake already happened, we're just waiting for the first 2.0 control frame response
@@ -27,9 +25,14 @@ namespace ClientProtocol
             }
         }
 
-        public void Dispose()
+        public override Task Start(Stream stream, CancellationToken cancel)
         {
-            _sessionStream.Dispose();
+            Contract.Assert(_sessionStream == null, "Start called more than once");
+            _sessionStream = stream;
+            _cancel = cancel;
+            _writeQueue = new WriteQueue(_sessionStream);
+            _frameReader = new FrameReader(_sessionStream, _cancel);
+            return StartPumps();
         }
 
         protected override void DispatchIncomingFrame(Frame frame)
@@ -56,7 +59,32 @@ namespace ClientProtocol
             }
         }
 
-        public Http2ClientStream CreateStream(CancellationToken cancel)
+        public Http2ClientStream SendRequest(IList<KeyValuePair<string, string>> pairs, X509Certificate clientCert, bool hasRequestBody, CancellationToken cancel)
+        {
+            Http2ClientStream clientStream = CreateStream(cancel);
+
+            int certIndex = UpdateClientCertificates(clientCert);
+
+            // Serialize the request as a SynStreamFrame and submit it. (FIN if there is no body)
+            byte[] headerBytes = FrameHelpers.SerializeHeaderBlock(pairs);
+            headerBytes = clientStream.Compressor.Compress(headerBytes);
+            SynStreamFrame frame = new SynStreamFrame(clientStream.Id, headerBytes);
+            frame.CertClot = certIndex;
+            frame.IsFin = !hasRequestBody;
+            clientStream.StartRequest(frame);
+
+            return clientStream;
+        }
+
+        // Maintain the list of client certificates in sync with the server
+        // Send a cert update if the server doesn't have this specific client cert yet.
+        private int UpdateClientCertificates(X509Certificate clientCert)
+        {
+            // throw new NotImplementedException();
+            return 0;
+        }
+
+        private Http2ClientStream CreateStream(CancellationToken cancel)
         {
             Http2ClientStream handshakeStream = new Http2ClientStream(GetNextId(), _writeQueue, cancel);
             _activeStreams[handshakeStream.Id] = handshakeStream;

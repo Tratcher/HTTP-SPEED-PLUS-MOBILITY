@@ -58,12 +58,18 @@ namespace ClientProtocol
             {
                 _incomingStream = new QueueStream();
             }
-            _responseTask.TrySetResult(frame);
+            // Dispatch, as TrySetResult will synchronously execute the waiters callback and block our message pump.
+            Task.Run(() => _responseTask.TrySetResult(frame));
         }
-        
-        public Task<SynReplyFrame> GetResponseAsync()
+
+        public async Task<IList<KeyValuePair<string, string>>> GetResponseAsync()
         {
-            return _responseTask.Task;
+            // Wait for and desterilize the response SynReplyFrame
+            SynReplyFrame responseFrame = await _responseTask.Task;
+            // Decompress and distribute headers
+            byte[] rawHeaders = Compressor.Decompress(responseFrame.CompressedHeaders);
+            IList<KeyValuePair<string, string>> pairs = FrameHelpers.DeserializeHeaderBlock(rawHeaders);
+            return pairs;
         }
 
         // Send a Fin frame

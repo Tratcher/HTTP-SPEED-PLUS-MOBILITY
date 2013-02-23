@@ -19,7 +19,13 @@ namespace SharedProtocol.Framing
         public async Task<Frame> ReadFrameAsync()
         {
             Frame preamble = new Frame();
-            await FillAsync(preamble.Buffer, 0, preamble.Buffer.Length, _cancel);
+            if (!await TryFillAsync(preamble.Buffer, 0, preamble.Buffer.Length, _cancel))
+            {
+                return null;
+            }
+
+            // TODO: If this is the first frame, verify that it is in fact a control frame, and that it is not a HTTP/1.1 text request.
+            // Not applicable after an HTTP/1.1->HTTP-01/2.0 upgrade handshake.
 
             if (preamble.IsControl && preamble.Version != Constants.CurrentProtocolVersion)
             {
@@ -27,7 +33,10 @@ namespace SharedProtocol.Framing
             }
 
             Frame wholeFrame = GetFrameType(preamble);
-            await FillAsync(wholeFrame.Buffer, Constants.FramePreambleSize, wholeFrame.Buffer.Length - Constants.FramePreambleSize, _cancel);
+            if (!await TryFillAsync(wholeFrame.Buffer, Constants.FramePreambleSize, wholeFrame.Buffer.Length - Constants.FramePreambleSize, _cancel))
+            {
+                return null;
+            }
 
             return wholeFrame;
         }
@@ -72,7 +81,7 @@ namespace SharedProtocol.Framing
             }
         }
 
-        private async Task FillAsync(byte[] buffer, int offset, int count, CancellationToken cancel)
+        private async Task<bool> TryFillAsync(byte[] buffer, int offset, int count, CancellationToken cancel)
         {
             int totalRead = 0;
             while (totalRead < count)
@@ -83,10 +92,11 @@ namespace SharedProtocol.Framing
                 if (read <= 0)
                 {
                     // The stream ended before we could get as much as we needed.
-                    throw new ObjectDisposedException(_stream.GetType().FullName);
+                    return false;
                 }
                 totalRead += read;
             }
+            return true;
         }
     }
 }

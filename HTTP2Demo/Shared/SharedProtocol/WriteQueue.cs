@@ -12,11 +12,12 @@ namespace SharedProtocol
 {
     // Queue up frames to send, including headers, body, flush, pings, etc.
     // TODO: Sort by priority?
-    public class WriteQueue
+    public sealed class WriteQueue : IDisposable
     {
         private ConcurrentQueue<QueueEntry> _messageQueue;
         private Stream _stream;
         private ManualResetEvent _dataAvailable;
+        private bool _disposed;
 
         public WriteQueue(Stream stream)
         {
@@ -51,8 +52,9 @@ namespace SharedProtocol
 
         public async Task PumpToStreamAsync()
         {
-            while (true)
+            while (!_disposed)
             {
+                // TODO: Attempt overlapped writes?
                 QueueEntry entry;
                 while (_messageQueue.TryDequeue(out entry))
                 {
@@ -82,6 +84,11 @@ namespace SharedProtocol
                 // _dataAvailable.Reset();
                 await Task.Delay(1000);
             }
+        }
+
+        public void Dispose()
+        {
+            _disposed = true;
         }
 
         private class QueueEntry

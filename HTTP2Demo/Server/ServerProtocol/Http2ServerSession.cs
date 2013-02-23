@@ -20,7 +20,6 @@ namespace ServerProtocol
         private AppFunc _next;
         private X509Certificate[] _clientCerts;
         private IDictionary<string, object> _upgradeRequest;
-        private CancellationToken _cancel;
         private TransportInformation _transportInfo;
 
         public Http2ServerSession(AppFunc next, TransportInformation transportInfo, IDictionary<string, object> upgradeRequest = null)
@@ -33,7 +32,7 @@ namespace ServerProtocol
             _upgradeRequest = upgradeRequest;
         }
 
-        public Task Start(Stream stream, CancellationToken cancel)
+        public override Task Start(Stream stream, CancellationToken cancel)
         {
             Contract.Assert(_sessionStream == null, "Start called more than once");
             _sessionStream = stream;

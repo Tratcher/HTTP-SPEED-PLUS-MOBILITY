@@ -244,14 +244,15 @@ namespace SharedProtocol
 
         private void SignalDataAvailable()
         {
-            _readWaitingForData.TrySetResult(null);
+            // Dispatch, as TrySetResult will synchronously execute the waiters callback and block our Write.
+            Task.Run(() => _readWaitingForData.TrySetResult(null));
         }
 
         private Task WaitForDataAsync()
         {
             _readWaitingForData = new TaskCompletionSource<object>();
 
-            if (_bufferedData.Count > 0 || _disposed)
+            if (!_bufferedData.IsEmpty || _disposed)
             {
                 // Race, data could have arrived before we created the TCS.
                 _readWaitingForData.TrySetResult(null);

@@ -1,16 +1,12 @@
 ﻿using ClientHandler.Transport;
 using ClientProtocol;
-using SharedProtocol.Framing;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
-using System.ServiceModel.Http2Protocol;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -124,12 +120,11 @@ namespace ClientHandler
                         }
                     }
 
-                    _clientSession = new Http2ClientSession(sessionStream, 
-                        createHanshakeStream: didHandshake, 
+                    _clientSession = new Http2ClientSession(createHanshakeStream: didHandshake, 
                         handshakeCancel: didHandshake ? cancel : CancellationToken.None);
 
-                    // TODO: Listen to task for errors?
-                    Task pumpTasks = _clientSession.StartPumps();
+                    // TODO: Listen to task for errors? Dispose/Abort CT?
+                    Task pumpTasks = _clientSession.Start(sessionStream, CancellationToken.None);
 
                     _connectingLock.Release(999); // Unblock all, this method no longer needs to be one at a time.
                     return didHandshake;
@@ -191,10 +186,6 @@ namespace ClientHandler
 
         private async Task<Http2ClientStream> SubmitRequest(HttpRequestMessage request, CancellationToken cancellationToken)
         {
-            Http2ClientStream clientStream = _clientSession.CreateStream(cancellationToken);
-            
-            int certIndex = UpdateClientCertificates(request);
-
             IList<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>();
 
             string method = request.Method.ToString();
@@ -229,20 +220,15 @@ namespace ClientHandler
                 }
             }
 
-            // Serialize the request as a SynStreamFrame and submit it. (FIN if there is no body)
-            byte[] headerBytes = FrameHelpers.SerializeHeaderBlock(pairs);
-            headerBytes = clientStream.Compressor.Compress(headerBytes);
-            SynStreamFrame frame = new SynStreamFrame(clientStream.Id, headerBytes);
-            frame.CertClot = certIndex;
+            X509Certificate clientCert = GetClientCert(request);
 
             // TODO: Set priority from request.Properties
 
             // TODO: How do I correctly determine if a request has a body?
             bool hasRequestBody = (request.Content != null);
 
-            frame.IsFin = !hasRequestBody;
-            clientStream.StartRequest(frame);
-
+            Http2ClientStream clientStream = _clientSession.SendRequest(pairs, clientCert, hasRequestBody, cancellationToken);            
+            
             // TODO: Upload
             if (hasRequestBody)
             {
@@ -258,29 +244,24 @@ namespace ClientHandler
             return clientStream;
         }
 
-        // Maintain the list of client certificates in sync with the server
-        // Send a cert update if the server doesn't have this specific client cert yet.
-        private int UpdateClientCertificates(HttpRequestMessage request)
+        private X509Certificate GetClientCert(HttpRequestMessage request)
         {
-            // TODO:
-            return 0;
+            // From the request.Properties?
             // throw new NotImplementedException();
+            return null;
         }
 
         private async Task<HttpResponseMessage> GetResponseAsync(Http2ClientStream stream)
         {
             // TODO: 100 continue? Start data upload (on separate thread so we can do bidirectional).
 
-            // Wait for and desterilize the response SynReplyFrame
             // Set up a response content object to receive the reply data.
-            SynReplyFrame responseFrame = await stream.GetResponseAsync();
+            IList<KeyValuePair<string, string>> pairs = await stream.GetResponseAsync();
             StreamContent streamContent = new StreamContent(stream.ResponseStream);
             HttpResponseMessage response = new HttpResponseMessage();
             response.Content = streamContent;
 
-            // Decompress and distribute headers
-            byte[] rawHeaders = stream.Compressor.Decompress(responseFrame.CompressedHeaders);
-            IList<KeyValuePair<string, string>> pairs = FrameHelpers.DeserializeHeaderBlock(rawHeaders);
+            // Distribute headers
             foreach (KeyValuePair<string, string> pair in pairs)
             {
                 if (pair.Key[0] == ':')

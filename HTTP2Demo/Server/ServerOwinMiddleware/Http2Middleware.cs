@@ -18,11 +18,21 @@ namespace ServerOwinMiddleware
     // Interestingly the HTTP/2.0 handshake does not need to be the first HTTP/1.1 request on a connection, only the last.
     public class Http2Middleware
     {
+        // Pass requests onto this pipeline if not upgrading to HTTP/2.0.
         private AppFunc _next;
+        // Pass requests onto this pipeline if upgraded to HTTP/2.0.
+        private AppFunc _nextHttp2;
 
         public Http2Middleware(AppFunc next)
         {
             _next = next;
+            _nextHttp2 = _next;
+        }
+
+        public Http2Middleware(AppFunc next, AppFunc branch)
+        {
+            _next = next;
+            _nextHttp2 = branch;
         }
 
         public async Task Invoke(IDictionary<string, object> environment)
@@ -94,7 +104,7 @@ namespace ServerOwinMiddleware
             }
 
             // The opaque stream and CancellationToken will be provided after the opaque upgrade.
-            return new Http2ServerSession(_next, CreateTransportInfo(clientCert, owinRequest), CopyHandshakeRequest(owinRequest));
+            return new Http2ServerSession(_nextHttp2, CreateTransportInfo(clientCert, owinRequest), CopyHandshakeRequest(owinRequest));
         }
 
         private TransportInformation CreateTransportInfo(X509Certificate clientCert, OwinRequest owinRequest)

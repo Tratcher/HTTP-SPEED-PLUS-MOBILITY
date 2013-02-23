@@ -5,17 +5,20 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SharedProtocol
 {
-    public abstract class Http2BaseSession<T> where T: Http2BaseStream
+    public abstract class Http2BaseSession<T> : IDisposable where T: Http2BaseStream
     {
         protected bool _goAwayReceived;
         protected ConcurrentDictionary<int, T> _activeStreams;
         protected FrameReader _frameReader;
         protected WriteQueue _writeQueue;
         protected Stream _sessionStream;
+        protected CancellationToken _cancel;
+        protected bool _disposed;
 
         protected Http2BaseSession()
         {
@@ -23,8 +26,12 @@ namespace SharedProtocol
             _activeStreams = new ConcurrentDictionary<int, T>();
         }
 
-        public Task StartPumps()
+        public abstract Task Start(Stream stream, CancellationToken cancel);
+
+        protected Task StartPumps()
         {
+            // TODO: Assert not started
+
             // Listen for incoming Http/2.0 frames
             Task incomingTask = PumpIncommingData();
             // Send outgoing Http/2.0 frames
@@ -36,9 +43,14 @@ namespace SharedProtocol
         // Read HTTP/2.0 frames from the raw stream and dispatch them to the appropriate virtual streams for processing.
         private async Task PumpIncommingData()
         {
-            while (!_goAwayReceived)
+            while (!_goAwayReceived && !_disposed)
             {
                 Frame frame = await _frameReader.ReadFrameAsync();
+                if (frame == null)
+                {
+                    // Stream closed
+                    break;
+                }
                 DispatchIncomingFrame(frame);
             }
         }
@@ -78,6 +90,31 @@ namespace SharedProtocol
                 throw new NotImplementedException("Stream id not found: " + id);
             }
             return stream;
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            _disposed = true;
+            if (!disposing)
+            {
+                return;
+            }
+
+            if (_writeQueue != null)
+            {
+                _writeQueue.Dispose();
+            }
+
+            // Just disposing of the stream should stop the FrameReader and the WriteQueue
+            if (_sessionStream != null)
+            {
+                _sessionStream.Dispose();
+            }
         }
     }
 }
