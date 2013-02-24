@@ -143,10 +143,10 @@ namespace SharedProtocol.Compression
         /// </summary>
 		public void Dispose()
 		{
-			_decompressOutZStream.Close();
-			_compressOutZStream.Close();
-			_memStreamCompression.Close();
-            _memStreamDecompression.Close();
+			// _decompressOutZStream.Dispose(); // TODO: Throws NullRef internally
+            // _compressOutZStream.Dispose(); // TODO: Throws NullRef internally
+            _memStreamCompression.Dispose();
+            _memStreamDecompression.Dispose();
 		}
 	}
 }

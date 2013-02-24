@@ -78,5 +78,16 @@ namespace ClientProtocol
             DataFrame terminator = new DataFrame(_id);
             _writeQueue.WriteFrameAsync(terminator, _cancel);
         }
+
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing)
+            {
+                _responseTask.TrySetCanceled();
+                _outputStream.Dispose();
+            }
+
+            base.Dispose(disposing);
+        }
     }
 }

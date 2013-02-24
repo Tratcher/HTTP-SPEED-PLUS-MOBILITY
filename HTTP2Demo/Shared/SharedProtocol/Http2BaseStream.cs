@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace SharedProtocol
 {
-    public abstract class Http2BaseStream
+    public abstract class Http2BaseStream : IDisposable
     {
         protected int _id;
         protected WriteQueue _writeQueue;
@@ -20,6 +20,7 @@ namespace SharedProtocol
         protected int _version;
         protected int _priority;
         protected Stream _incomingStream;
+        protected bool _disposed;
 
         protected Http2BaseStream(int id, WriteQueue writeQueue, CancellationToken cancel)
         {
@@ -43,6 +44,11 @@ namespace SharedProtocol
         // update any necessary state (e.g. FINs), and trigger any waiting readers.
         public void ReceiveData(DataFrame dataFrame)
         {
+            if (_disposed)
+            {
+                return;
+            }
+
             Contract.Assert(_incomingStream != null);
             ArraySegment<byte> data = dataFrame.Data;
             // TODO: Decompression?
@@ -51,6 +57,30 @@ namespace SharedProtocol
             {
                 // TODO: How can we signal the difference between an aborted stream and a finished stream? CancellationToken?
                 _incomingStream.Dispose();
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            _disposed = true;
+            if (disposing)
+            {
+                _compressor.Dispose();
+
+                if (_writeQueue != null)
+                {
+                    _writeQueue.Dispose();
+                }
+
+                if (_incomingStream != null)
+                {
+                    _incomingStream.Dispose();
+                }
             }
         }
     }

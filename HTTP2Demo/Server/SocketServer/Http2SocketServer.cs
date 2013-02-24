@@ -59,10 +59,13 @@ namespace SocketServer
             _socket.Listen(backlog: 2);
             while (!_disposed)
             {
+                Http2ServerSession session = null;
+                Socket clientSocket = null;
+                Stream stream = null;
                 try
                 {
-                    Socket clientSocket = await Task.Factory.FromAsync(_socket.BeginAccept, (Func<IAsyncResult, Socket>)_socket.EndAccept, null);
-                    Stream stream = new NetworkStream(clientSocket, ownsSocket: true);
+                    clientSocket = await Task.Factory.FromAsync(_socket.BeginAccept, (Func<IAsyncResult, Socket>)_socket.EndAccept, null);
+                    stream = new NetworkStream(clientSocket, ownsSocket: true);
 
                     X509Certificate clientCert = null;
 
@@ -85,7 +88,7 @@ namespace SocketServer
                         LocalPort = localEndPoint.Port.ToString(CultureInfo.InvariantCulture),
                         RemotePort = remoteEndPoint.Port.ToString(CultureInfo.InvariantCulture),
                     };
-                    
+
                     // Side effect of using dual mode sockets, the IPv4 addresses look like 0::ffff:127.0.0.1.
                     if (localEndPoint.Address.IsIPv4MappedToIPv6)
                     {
@@ -105,12 +108,17 @@ namespace SocketServer
                         transportInfo.RemoteIpAddress = remoteEndPoint.Address.ToString();
                     }
 
-                    Http2ServerSession session = new Http2ServerSession(_next, transportInfo);
-                    // TODO: awaiting here will only let us accept the next session after the current one finishes.
+                    session = new Http2ServerSession(_next, transportInfo);
+                    // TODO: awaiting here will only let us accept the next connection/session after the current one finishes.
                     await session.Start(stream, CancellationToken.None);
+                }
+                catch (ProtocolViolationException)
+                {
+                    // Handshake failure, most likely do to receiving a HTTP/1.1 text request.
                 }
                 catch (SocketException)
                 {
+                    // Disconnect?
                 }
                 catch (ObjectDisposedException)
                 {
@@ -120,6 +128,23 @@ namespace SocketServer
                 {
                     Dispose();
                     throw;
+                }
+                finally
+                {
+                    if (session != null)
+                    {
+                        session.Dispose();
+                    }
+
+                    if (stream != null)
+                    {
+                        stream.Dispose();
+                    }
+
+                    if (clientSocket != null)
+                    {
+                        clientSocket.Dispose();
+                    }
                 }
             }
         }

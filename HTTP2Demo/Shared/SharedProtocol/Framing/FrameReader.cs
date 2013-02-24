@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,11 +9,13 @@ namespace SharedProtocol.Framing
     public class FrameReader
     {
         private Stream _stream;
+        private bool _validateFirstFrameIsControl;
         private CancellationToken _cancel;
 
-        public FrameReader(Stream stream, CancellationToken cancel)
+        public FrameReader(Stream stream, bool validateFirstFrameIsControl, CancellationToken cancel)
         {
             _stream = stream;
+            _validateFirstFrameIsControl = validateFirstFrameIsControl;
             _cancel = cancel;
         }
 
@@ -24,6 +27,16 @@ namespace SharedProtocol.Framing
                 return null;
             }
 
+            if (_validateFirstFrameIsControl)
+            {
+                if (!preamble.IsControl)
+                {
+                    // Probably a HTTP/1.1 text formatted request.  We could check if it starts with 'GET'
+                    // Is it sane to send a response here?  What kind of response? 1.1 text, or 2.0 binary?
+                    throw new ProtocolViolationException("First frame is not a control frame.");
+                }
+                _validateFirstFrameIsControl = false;
+            }
             // TODO: If this is the first frame, verify that it is in fact a control frame, and that it is not a HTTP/1.1 text request.
             // Not applicable after an HTTP/1.1->HTTP-01/2.0 upgrade handshake.
 

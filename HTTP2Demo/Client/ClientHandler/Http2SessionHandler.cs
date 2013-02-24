@@ -107,7 +107,8 @@ namespace ClientHandler
                             /* throw new NotSupportedException("HTTP/1.1 handshake fallback not implemented: \r\n" 
                                 + FrameHelpers.GetAsciiAt(handshake.ResponseBytes)); */
                         }
-                        else if (handshake.Result == HandshakeResult.UnexpectedControlFrame)
+                        else if (handshake.Result == HandshakeResult.UnexpectedControlFrame
+                            || handshake.Result == HandshakeResult.UnexpectedConnectionClose)
                         {
                             // The server only accepts direct 2.0 upgrade, try again without the 1.1 handshake.
                             didHandshake = false;

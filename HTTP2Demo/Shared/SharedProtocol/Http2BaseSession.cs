@@ -48,12 +48,24 @@ namespace SharedProtocol
         {
             while (!_goAwayReceived && !_disposed)
             {
-                Frame frame = await _frameReader.ReadFrameAsync();
+                Frame frame;
+                try
+                {
+                    frame = await _frameReader.ReadFrameAsync();
+                }
+                catch (Exception)
+                {
+                    // Read failure, abort the connection/session.
+                    Dispose();
+                    throw;
+                }
+
                 if (frame == null)
                 {
                     // Stream closed
                     break;
                 }
+
                 DispatchIncomingFrame(frame);
             }
         }
@@ -140,8 +152,6 @@ namespace SharedProtocol
                 return;
             }
 
-            // TODO: Dispose of all streams
-
             if (_writeQueue != null)
             {
                 _writeQueue.Dispose();
@@ -151,6 +161,12 @@ namespace SharedProtocol
             if (currentPing != null)
             {
                 currentPing.Cancel();
+            }
+
+            // TODO: Dispose of all streams
+            foreach (T stream in _activeStreams.Values)
+            {
+                stream.Dispose();
             }
 
             // Just disposing of the stream should stop the FrameReader and the WriteQueue

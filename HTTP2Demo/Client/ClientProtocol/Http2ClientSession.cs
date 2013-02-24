@@ -32,7 +32,7 @@ namespace ClientProtocol
             _sessionStream = stream;
             _cancel = cancel;
             _writeQueue = new WriteQueue(_sessionStream);
-            _frameReader = new FrameReader(_sessionStream, _cancel);
+            _frameReader = new FrameReader(_sessionStream, true, _cancel);
             return StartPumps();
         }
 

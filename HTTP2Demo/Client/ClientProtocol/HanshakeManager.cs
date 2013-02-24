@@ -52,11 +52,19 @@ namespace ClientProtocol
             int read = -1;
             do
             {
-                read = await stream.ReadAsync(buffer, readOffset, buffer.Length - readOffset);
+                try
+                {
+                    read = await stream.ReadAsync(buffer, readOffset, buffer.Length - readOffset);
+                }
+                catch (IOException)
+                {
+                    return new HandshakeResponse() { Result = HandshakeResult.UnexpectedConnectionClose };
+                }
+
                 if (read == 0)
                 {
                     // TODO: Should this be a HandshakeResult? It's similar to a SockeException, IOException, etc..
-                    throw new NotImplementedException("Early end of handshake stream.");
+                    return new HandshakeResponse() { Result = HandshakeResult.UnexpectedConnectionClose };
                 }
                 
                 readOffset += read;

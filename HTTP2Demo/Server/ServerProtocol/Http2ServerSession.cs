@@ -36,13 +36,14 @@ namespace ServerProtocol
         public override Task Start(Stream stream, CancellationToken cancel)
         {
             Contract.Assert(_sessionStream == null, "Start called more than once");
+            bool handshakeHappened = _upgradeRequest != null;
             _sessionStream = stream;
             _cancel = cancel;
             _writeQueue = new WriteQueue(_sessionStream);
-            _frameReader = new FrameReader(_sessionStream, _cancel);
+            _frameReader = new FrameReader(_sessionStream, !handshakeHappened, _cancel);
 
             // Dispatch the original upgrade stream via _next;
-            if (_upgradeRequest != null)
+            if (handshakeHappened)
             {
                 DispatchInitialRequest();
             }

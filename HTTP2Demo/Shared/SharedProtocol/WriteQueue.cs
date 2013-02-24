@@ -107,6 +107,7 @@ namespace SharedProtocol
         public void Dispose()
         {
             _disposed = true;
+            _readWaitingForData.TrySetResult(null);
         }
 
         private class QueueEntry
