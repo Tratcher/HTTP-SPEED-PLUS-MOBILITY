@@ -4,6 +4,7 @@ using Owin;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Extensions;
@@ -85,7 +86,7 @@ namespace EndToEnd.Tests
                 }))
             {
                 using (HttpClient client = new HttpClient(
-                    new Http2SessionTracker(do11Handshake: true, fallbackHandler: new HttpClientHandler())))
+                    new Http2SessionTracker(do11Handshake: true, fallbackHandler: new NotImplementedHandler())))
                 {
                     HttpResponseMessage response = await client.GetAsync(Url);
                     response.EnsureSuccessStatusCode();
@@ -111,7 +112,7 @@ namespace EndToEnd.Tests
                 }))
             {
                 using (HttpClient client = new HttpClient(
-                    new Http2SessionTracker(do11Handshake: false, fallbackHandler: new HttpClientHandler())))
+                    new Http2SessionTracker(do11Handshake: false, fallbackHandler: new NotImplementedHandler())))
                 {
                     // TODO: Xunit 2.0 can handle async lamdas (when it's released).
                     // Should be a TaskCanceledException.
@@ -158,7 +159,7 @@ namespace EndToEnd.Tests
                 }))
             {
                 using (HttpClient client = new HttpClient(
-                    new Http2SessionTracker(do11Handshake: false, fallbackHandler: new HttpClientHandler())))
+                    new Http2SessionTracker(do11Handshake: false, fallbackHandler: new NotImplementedHandler())))
                 {
                     HttpResponseMessage response = await client.GetAsync(Url);
                     response.EnsureSuccessStatusCode();
@@ -181,7 +182,7 @@ namespace EndToEnd.Tests
                 }))
             {
                 using (HttpClient client = new HttpClient(
-                    new Http2SessionTracker(do11Handshake: true, fallbackHandler: new HttpClientHandler())))
+                    new Http2SessionTracker(do11Handshake: true, fallbackHandler: new NotImplementedHandler())))
                 {
                     HttpResponseMessage response = await client.GetAsync(Url);
                     response.EnsureSuccessStatusCode();
@@ -198,6 +199,14 @@ namespace EndToEnd.Tests
         {
             environment["owin.ResponseStatusCode"] = 201;
             return Task.FromResult<object>(null);
+        }
+
+        private class NotImplementedHandler : HttpMessageHandler
+        {
+            protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }

@@ -109,7 +109,7 @@ namespace SharedProtocol
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            WriteAsync(buffer, offset, count).Wait();
+            WriteAsync(buffer, offset, count);
         }
 
         public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
@@ -124,13 +124,15 @@ namespace SharedProtocol
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
         {
             // TODO:
-            throw new NotImplementedException();
+            // throw new NotImplementedException();
+            return base.BeginWrite(buffer, offset, count, callback, state);
         }
 
         public override void EndWrite(IAsyncResult asyncResult)
         {
             // TODO:
-            throw new NotImplementedException();
+            // throw new NotImplementedException();
+            base.EndWrite(asyncResult);
         }
     }
 }
