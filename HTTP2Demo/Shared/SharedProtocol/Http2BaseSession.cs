@@ -22,11 +22,13 @@ namespace SharedProtocol
         protected int _nextPingId;
         protected CancellationToken _cancel;
         protected bool _disposed;
+        protected ISettingsManager _settingsManager;
 
         protected Http2BaseSession()
         {
             _goAwayReceived = false;
             _activeStreams = new ConcurrentDictionary<int, T>();
+            _settingsManager = new EmptySettingsManager();
         }
 
         public abstract Task Start(Stream stream, CancellationToken cancel);
@@ -80,6 +82,9 @@ namespace SharedProtocol
                     case ControlFrameType.Ping:
                         PingFrame pingFrame = (PingFrame)frame;
                         ReceivePing(pingFrame.Id);
+                        break;
+                    case ControlFrameType.Settings:
+                        _settingsManager.ProcessSettings((SettingsFrame)frame);
                         break;
                     default:
                         throw new NotImplementedException(frame.FrameType.ToString());

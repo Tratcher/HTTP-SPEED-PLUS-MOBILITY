@@ -49,6 +49,7 @@
     <Compile Include="Compression\ZOutputStreamExt.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="DuplexStream.cs" />
+    <Compile Include="EmptySettingsManager.cs" />
     <Compile Include="Framing\ControlFrame.cs" />
     <Compile Include="Framing\CredentialFrame.cs" />
     <Compile Include="Framing\DataFrame.cs" />
@@ -63,12 +64,16 @@
     <Compile Include="Framing\PingFrame.cs" />
     <Compile Include="Framing\ResetStatusCode.cs" />
     <Compile Include="Framing\RstStreamFrame.cs" />
+    <Compile Include="Framing\SettingsIds.cs" />
+    <Compile Include="Framing\SettingsPair.cs" />
+    <Compile Include="Framing\SettingsFlags.cs" />
     <Compile Include="Framing\SettingsFrame.cs" />
     <Compile Include="Framing\SynReplyFrame.cs" />
     <Compile Include="Framing\SynStreamFrame.cs" />
     <Compile Include="Framing\WindowUpdateFrame.cs" />
     <Compile Include="Http2BaseSession.cs" />
     <Compile Include="Http2BaseStream.cs" />
+    <Compile Include="ISettingsManager.cs" />
     <Compile Include="Ping.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueueStream.cs" />

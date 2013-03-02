@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,13 +19,18 @@ namespace SharedProtocol.Framing
         }
 
         // Outgoing
-        public SettingsFrame(int entryCount, byte[] settings)
-            : base(new byte[InitialFrameSize + settings.Length])
+        public SettingsFrame(IList<SettingsPair> settings)
+            : base(new byte[InitialFrameSize + settings.Count * SettingsPair.PairSize])
         {
             FrameType = ControlFrameType.Settings;
-            FrameLength = settings.Length + InitialFrameSize - Constants.FramePreambleSize;
-            EntryCount = entryCount;
-            System.Buffer.BlockCopy(settings, 0, Buffer, Constants.FramePreambleSize, settings.Length);
+            FrameLength = (settings.Count * SettingsPair.PairSize) + InitialFrameSize - Constants.FramePreambleSize;
+            EntryCount = settings.Count;
+            for (int i = 0; i < settings.Count; i++)
+            {
+                ArraySegment<byte> segment = settings[i].BufferSegment;
+                System.Buffer.BlockCopy(segment.Array, segment.Offset, Buffer,
+                    InitialFrameSize + i * SettingsPair.PairSize, SettingsPair.PairSize);
+            }
         }
 
         // 32 bits
@@ -40,9 +46,14 @@ namespace SharedProtocol.Framing
             }
         }
 
-        public ArraySegment<byte> SettingsBlob
+        public SettingsPair this[int index]
         {
-            get { return new ArraySegment<byte>(Buffer, InitialFrameSize, FrameLength - InitialFrameSize); }
+            get
+            {
+                Contract.Assert(index < EntryCount);
+                return new SettingsPair(new ArraySegment<byte>(Buffer, 
+                    InitialFrameSize + index * SettingsPair.PairSize, SettingsPair.PairSize));
+            }
         }
     }
 }
