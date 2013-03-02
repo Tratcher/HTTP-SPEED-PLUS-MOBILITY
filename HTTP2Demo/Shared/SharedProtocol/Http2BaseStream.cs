@@ -60,6 +60,11 @@ namespace SharedProtocol
             }
         }
 
+        public void IncreaseWindowSize(int delta)
+        {
+            // throw new NotImplementedException();
+        }
+
         public void Dispose()
         {
             Dispose(true);
