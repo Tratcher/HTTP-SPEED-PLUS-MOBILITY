@@ -51,12 +51,43 @@ namespace SharedProtocol.Framing
             }
         }
 
-        public ArraySegment<byte> CertificateListBlob
+        public ArraySegment<byte> Proof
         {
             get
             {
-                return new ArraySegment<byte>(Buffer, InitialFrameSize + ProofLength,
-                    FrameLength + Constants.FramePreambleSize - InitialFrameSize - ProofLength);
+                return new ArraySegment<byte>(Buffer, InitialFrameSize, ProofLength);
+            }
+        }
+
+        // Certificates
+        public ArraySegment<byte> this[int index]
+        {
+            get
+            {
+                int offset = InitialFrameSize + ProofLength;
+                for (int i = 0; i < index; i++)
+                {
+                    int certSize = FrameHelpers.Get32BitsAt(Buffer, offset);
+                    offset += 4 + certSize;
+                }
+                return new ArraySegment<byte>(Buffer, offset + 4, FrameHelpers.Get32BitsAt(Buffer, offset));
+            }
+        }
+
+        // # of Certificates
+        public int Count
+        {
+            get
+            {
+                int count = 0;
+                int offset = InitialFrameSize + ProofLength;
+                while (offset < Buffer.Length)
+                {
+                    int certSize = FrameHelpers.Get32BitsAt(Buffer, offset);
+                    offset += 4 + certSize;
+                    count++;
+                }
+                return count;
             }
         }
     }

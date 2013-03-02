@@ -8,8 +8,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using SharedProtocol.Framing;
 using SharedProtocol;
+using SharedProtocol.Framing;
+using SharedProtocol.Credentials;
 
 namespace ServerProtocol
 {
@@ -21,6 +22,7 @@ namespace ServerProtocol
         private X509Certificate[] _clientCerts;
         private IDictionary<string, object> _upgradeRequest;
         private TransportInformation _transportInfo;
+        private CredentialManager _credentialManager;
 
         public Http2ServerSession(AppFunc next, TransportInformation transportInfo, IDictionary<string, object> upgradeRequest = null)
             : base()
@@ -31,6 +33,7 @@ namespace ServerProtocol
             _clientCerts[0] = _transportInfo.ClientCertificate;
             _upgradeRequest = upgradeRequest;
             _nextPingId = 2; // Server pings are even
+            _credentialManager = new CredentialManager();
         }
 
         public override Task Start(Stream stream, CancellationToken cancel)
@@ -95,6 +98,12 @@ namespace ServerProtocol
                         DispatchNewStream(synFrame.StreamId, stream);
                         break;
 
+                    case ControlFrameType.Credential:
+                        CredentialFrame credentialFrame = (CredentialFrame)frame;
+                        CredentialSlot slot = new CredentialSlot(credentialFrame);
+                        bool success = _credentialManager.TrySetCredential(credentialFrame.Slot, slot);
+                        // TODO: if (!success) ???
+                        break;
                     default:
                         base.DispatchIncomingFrame(frame);
                         break;
