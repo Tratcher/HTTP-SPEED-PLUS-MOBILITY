@@ -12,6 +12,15 @@ namespace SharedProtocol.IO
         private CancellationToken _cancel;
         private Priority _priority;
 
+        // Flush
+        public PriorityQueueEntry(Priority priority, CancellationToken cancel)
+        {
+            _frame = null;
+            _priority = priority;
+            _tcs = new TaskCompletionSource<object>();
+            _cancel = cancel;
+        }
+
         public PriorityQueueEntry(Frame frame, Priority priority, CancellationToken cancel)
         {
             _frame = frame;
@@ -22,9 +31,11 @@ namespace SharedProtocol.IO
 
         public Priority Priority { get { return _priority; } }
 
+        public bool IsFlush { get { return _frame == null; } }
+
         public Frame Frame { get { return _frame; } }
 
-        public byte[] Buffer { get { return _frame.Buffer; } }
+        public byte[] Buffer { get { return (_frame  != null) ? _frame.Buffer : null; } }
 
         public Task Task { get { return _tcs.Task; } }
 

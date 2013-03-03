@@ -1,20 +1,15 @@
 ﻿using SharedProtocol.Framing;
 using System;
-using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace SharedProtocol.IO
 {
     // Queue up frames to send, including headers, body, flush, pings, etc.
-    // TODO: Sort by priority?
     public sealed class WriteQueue : IDisposable
     {
-        private ConcurrentQueue<PriorityQueueEntry> _messageQueue;
+        private PriorityQueue _messageQueue;
         private Stream _stream;
         private ManualResetEvent _dataAvailable;
         private bool _disposed;
@@ -22,7 +17,7 @@ namespace SharedProtocol.IO
 
         public WriteQueue(Stream stream)
         {
-            _messageQueue = new ConcurrentQueue<PriorityQueueEntry>();
+            _messageQueue = new PriorityQueue();
             _stream = stream;
             _dataAvailable = new ManualResetEvent(false);
             _readWaitingForData = new TaskCompletionSource<object>();
@@ -32,7 +27,7 @@ namespace SharedProtocol.IO
         public Task WriteFrameAsync(Frame frame, Priority priority, CancellationToken cancel)
         {
             PriorityQueueEntry entry = new PriorityQueueEntry(frame, priority, cancel);
-            _messageQueue.Enqueue(entry);
+            Enqueue(entry);
             SignalDataAvailable();
             return entry.Task;
         }
@@ -46,7 +41,7 @@ namespace SharedProtocol.IO
                 return Task.FromResult<object>(null);
             }
 
-            PriorityQueueEntry entry = new PriorityQueueEntry(null, priority, cancel);
+            PriorityQueueEntry entry = new PriorityQueueEntry(priority, cancel);
             Enqueue(entry);
             SignalDataAvailable();
             return entry.Task;
@@ -64,7 +59,7 @@ namespace SharedProtocol.IO
 
         private bool IsDataAvailable()
         {
-            return !_messageQueue.IsEmpty;
+            return _messageQueue.IsDataAvailable();
         }
 
         public async Task PumpToStreamAsync()
@@ -83,7 +78,11 @@ namespace SharedProtocol.IO
 
                     try
                     {
-                        if (entry.Buffer != null)
+                        if (entry.IsFlush)
+                        {
+                            await _stream.FlushAsync();
+                        }
+                        else
                         {
                             await _stream.WriteAsync(entry.Buffer, 0, entry.Buffer.Length, entry.CancellationToken);
                         }
