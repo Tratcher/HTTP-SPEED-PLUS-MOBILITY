@@ -54,6 +54,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Program_old.cs" />
     <Compile Include="Http\HttpReportLines.cs" />
     <Compile Include="Http\RequestPackage.cs" />
     <Compile Include="ProtocolLog\FrameLogItem.cs" />
