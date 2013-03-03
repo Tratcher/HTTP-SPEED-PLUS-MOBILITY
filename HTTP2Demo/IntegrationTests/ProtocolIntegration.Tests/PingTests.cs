@@ -1,6 +1,6 @@
 ﻿using ClientProtocol;
 using ServerProtocol;
-using SharedProtocol;
+using SharedProtocol.IO;
 using System;
 using System.Collections.Generic;
 using System.Threading;

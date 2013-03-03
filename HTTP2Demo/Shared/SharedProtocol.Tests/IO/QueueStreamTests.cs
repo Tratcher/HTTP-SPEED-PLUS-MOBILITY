@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Xunit;
 
-namespace SharedProtocol.Tests
+namespace SharedProtocol.IO.Tests
 {
     public class QueueStreamTests
     {

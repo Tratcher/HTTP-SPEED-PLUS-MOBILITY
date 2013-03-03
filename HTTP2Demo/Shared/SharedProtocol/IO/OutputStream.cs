@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SharedProtocol
+namespace SharedProtocol.IO
 {
     public class OutputStream : Stream
     {

@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using SharedProtocol;
+using SharedProtocol.Credentials;
+using SharedProtocol.Framing;
+using SharedProtocol.IO;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using SharedProtocol;
-using SharedProtocol.Framing;
-using SharedProtocol.Credentials;
 
 namespace ServerProtocol
 {

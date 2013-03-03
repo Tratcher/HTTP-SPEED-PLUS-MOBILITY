@@ -4,7 +4,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SharedProtocol
+namespace SharedProtocol.IO
 {
     // This class buffers data written into it so it can be read out at the other end.
     // Useful for emulating a socket type transport.

@@ -8,13 +8,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SharedProtocol
+namespace SharedProtocol.IO
 {
     // Queue up frames to send, including headers, body, flush, pings, etc.
     // TODO: Sort by priority?
     public sealed class WriteQueue : IDisposable
     {
-        private ConcurrentQueue<QueueEntry> _messageQueue;
+        private ConcurrentQueue<PriorityQueueEntry> _messageQueue;
         private Stream _stream;
         private ManualResetEvent _dataAvailable;
         private bool _disposed;
@@ -22,7 +22,7 @@ namespace SharedProtocol
 
         public WriteQueue(Stream stream)
         {
-            _messageQueue = new ConcurrentQueue<QueueEntry>();
+            _messageQueue = new ConcurrentQueue<PriorityQueueEntry>();
             _stream = stream;
             _dataAvailable = new ManualResetEvent(false);
             _readWaitingForData = new TaskCompletionSource<object>();
@@ -31,7 +31,7 @@ namespace SharedProtocol
         // Queue up a fully rendered frame to send
         public Task WriteFrameAsync(Frame frame, Priority priority, CancellationToken cancel)
         {
-            QueueEntry entry = new QueueEntry(frame.Buffer, priority, cancel);
+            PriorityQueueEntry entry = new PriorityQueueEntry(frame, priority, cancel);
             _messageQueue.Enqueue(entry);
             SignalDataAvailable();
             return entry.Task;
@@ -41,15 +41,30 @@ namespace SharedProtocol
         // TODO: Have this only flush messages from one specific HTTP2Stream
         public Task FlushAsync(/*int streamId, */ Priority priority, CancellationToken cancel)
         {
-            if (_messageQueue.Count == 0)
+            if (!IsDataAvailable())
             {
                 return Task.FromResult<object>(null);
             }
 
-            QueueEntry entry = new QueueEntry(null, priority, cancel);
-            _messageQueue.Enqueue(entry);
+            PriorityQueueEntry entry = new PriorityQueueEntry(null, priority, cancel);
+            Enqueue(entry);
             SignalDataAvailable();
             return entry.Task;
+        }
+
+        private void Enqueue(PriorityQueueEntry entry)
+        {
+            _messageQueue.Enqueue(entry);
+        }
+
+        private bool TryDequeue(out PriorityQueueEntry entry)
+        {
+            return _messageQueue.TryDequeue(out entry);
+        }
+
+        private bool IsDataAvailable()
+        {
+            return !_messageQueue.IsEmpty;
         }
 
         public async Task PumpToStreamAsync()
@@ -57,8 +72,8 @@ namespace SharedProtocol
             while (!_disposed)
             {
                 // TODO: Attempt overlapped writes?
-                QueueEntry entry;
-                while (_messageQueue.TryDequeue(out entry))
+                PriorityQueueEntry entry;
+                while (TryDequeue(out entry))
                 {
                     if (entry.CancellationToken.IsCancellationRequested)
                     {
@@ -95,7 +110,7 @@ namespace SharedProtocol
         {
             _readWaitingForData = new TaskCompletionSource<object>();
 
-            if (!_messageQueue.IsEmpty || _disposed)
+            if (IsDataAvailable() || _disposed)
             {
                 // Race, data could have arrived before we created the TCS.
                 _readWaitingForData.TrySetResult(null);
@@ -108,43 +123,6 @@ namespace SharedProtocol
         {
             _disposed = true;
             _readWaitingForData.TrySetResult(null);
-        }
-
-        private class QueueEntry
-        {
-            private TaskCompletionSource<object> _tcs;
-            private byte[] _buffer; // null for FlushAsync
-            private CancellationToken _cancel;
-            private Priority _priority;
-
-            public QueueEntry(byte[] buffer, Priority priority, CancellationToken cancel)
-            {
-                _buffer = buffer;
-                _priority = priority;
-                _tcs = new TaskCompletionSource<object>();
-                _cancel = cancel;
-            }
-
-            public byte[] Buffer { get { return _buffer; } }
-
-            public Task Task { get { return _tcs.Task; } }
-
-            public CancellationToken CancellationToken { get { return _cancel; } }
-
-            internal void Complete()
-            {
-                _tcs.TrySetResult(null);
-            }
-
-            internal void Cancel()
-            {
-                _tcs.TrySetCanceled();
-            }
-
-            internal void Fail(Exception ex)
-            {
-                _tcs.TrySetException(ex);
-            }
         }
     }
 }

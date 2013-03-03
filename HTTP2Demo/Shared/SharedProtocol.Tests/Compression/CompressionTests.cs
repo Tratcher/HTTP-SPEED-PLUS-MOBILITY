@@ -1,7 +1,6 @@
-﻿using SharedProtocol.Compression;
-using Xunit;
+﻿using Xunit;
 
-namespace SharedProtocol.Tests
+namespace SharedProtocol.Compression.Tests
 {
     public class CompressionTests
     {

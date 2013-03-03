@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace SharedProtocol
+namespace SharedProtocol.IO
 {
     // This takes two QueueStreams and positions them side by side to form a duplex channel
     // like a socket.

@@ -1,6 +1,7 @@
 ﻿using Owin.Types;
 using SharedProtocol;
 using SharedProtocol.Framing;
+using SharedProtocol.IO;
 using System;
 using System.Collections;
 using System.Collections.Generic;

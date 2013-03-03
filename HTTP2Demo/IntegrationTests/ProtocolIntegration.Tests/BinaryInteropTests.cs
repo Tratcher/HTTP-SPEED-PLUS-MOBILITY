@@ -1,6 +1,6 @@
 ﻿using ClientProtocol;
 using ServerProtocol;
-using SharedProtocol;
+using SharedProtocol.IO;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,7 +10,6 @@ using Xunit;
 
 namespace ProtocolIntegration.Tests
 {
-    using SharedProtocol.Framing;
     using AppFunc = Func<IDictionary<string, object>, Task>;
 
     // Connect and share only binary frames
