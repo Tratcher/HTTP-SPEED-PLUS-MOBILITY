@@ -9,26 +9,58 @@ namespace SharedProtocol.IO
 {
     public class PriorityQueue
     {
-        private readonly ConcurrentQueue<PriorityQueueEntry> _queue;
+        private readonly object _queueLock;
+        private readonly LinkedList<PriorityQueueEntry> _queue;
 
         public PriorityQueue()
         {
-            _queue = new ConcurrentQueue<PriorityQueueEntry>();
+            _queueLock = new object();
+            _queue = new LinkedList<PriorityQueueEntry>();
         }
 
+        // TODO: How can we make enqueue faster than O(n) and still maintain O(1) dequeue?
         public void Enqueue(PriorityQueueEntry entry)
         {
-            _queue.Enqueue(entry);
+            lock (_queueLock)
+            {
+                // Scan backwards, so we end up in order behind other items of the same priority.
+                LinkedListNode<PriorityQueueEntry> current = _queue.Last;
+                while (current != null && current.Value.Priority > entry.Priority)
+                {
+                    current = current.Previous;
+                }
+
+                if (current == null)
+                {
+                    // New entry is highest priority (the list may be empty).
+                    _queue.AddFirst(entry);
+                }
+                else
+                {
+                    _queue.AddAfter(current, entry);
+                }
+            }
         }
 
         public bool TryDequeue(out PriorityQueueEntry entry)
         {
-            return _queue.TryDequeue(out entry);
+            lock (_queueLock)
+            {
+                if (_queue.Count == 0)
+                {
+                    entry = null;
+                    return false;
+                }
+
+                entry = _queue.First.Value;
+                _queue.RemoveFirst();
+                return true;
+            }
         }
 
         public bool IsDataAvailable()
         {
-            return !_queue.IsEmpty;
+            return _queue.Count > 0;
         }
     }
 }
