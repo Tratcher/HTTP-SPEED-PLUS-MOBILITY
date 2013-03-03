@@ -36,6 +36,7 @@ namespace SharedProtocol.Framing
         public static void SetHigh3BitsAt(byte[] buffer, int offset, int value)
         {
             Contract.Assert(offset >= 0 && offset < buffer.Length);
+            Contract.Assert(value >= 0 && value <= 7);
             byte lower5Bits = (byte)(buffer[offset] & 0x1F);
             byte upper3Bits = (byte)(value << 5);
             buffer[offset] = (byte)(upper3Bits | lower5Bits);
@@ -50,7 +51,7 @@ namespace SharedProtocol.Framing
         public static void Set5BitsAt(byte[] buffer, int offset, int value)
         {
             Contract.Assert(offset >= 0 && offset < buffer.Length);
-            Contract.Assert(value <= 0x1F);
+            Contract.Assert(value >= 0 && value <= 0x1F);
             byte lower5Bits = (byte)(value & 0x1F);
             byte upper3Bits = (byte)(buffer[offset] & 0xE0);
             buffer[offset] = (byte)(upper3Bits | lower5Bits);
@@ -66,7 +67,7 @@ namespace SharedProtocol.Framing
         public static void Set15BitsAt(byte[] buffer, int offset, int value)
         {
             Contract.Assert(offset >= 0 && offset + 1 < buffer.Length);
-            Contract.Assert(value <= 0x7FFF);
+            Contract.Assert(value >= 0 && value <= 0x7FFF);
             buffer[offset] |= (byte)((value >> 8) & 0x7F);
             buffer[offset + 1] = (byte)value;
         }
@@ -80,7 +81,7 @@ namespace SharedProtocol.Framing
         public static void Set16BitsAt(byte[] buffer, int offset, int value)
         {
             Contract.Assert(offset >= 0 && offset + 1 < buffer.Length);
-            Contract.Assert(value <= 0xFFFF);
+            Contract.Assert(value >= 0 && value <= 0xFFFF);
             buffer[offset] = (byte)(value >> 8);
             buffer[offset + 1] = (byte)value;
         }
@@ -94,7 +95,7 @@ namespace SharedProtocol.Framing
         public static void Set24BitsAt(byte[] buffer, int offset, int value)
         {
             Contract.Assert(offset >= 0 && offset + 2 < buffer.Length);
-            Contract.Assert(value <= 0xFFFFF);
+            Contract.Assert(value >= 0 && value <= 0xFFFFF);
             buffer[offset] = (byte)(value >> 16);
             buffer[offset + 1] = (byte)(value >> 8);
             buffer[offset + 2] = (byte)value;
@@ -113,7 +114,7 @@ namespace SharedProtocol.Framing
         public static void Set31BitsAt(byte[] buffer, int offset, int value)
         {
             Contract.Assert(offset >= 0 && offset + 3 < buffer.Length);
-            Contract.Assert(value <= 0x7FFFFF);
+            Contract.Assert(value >= 0 && value <= 0x7FFFFF);
             buffer[offset] |= (byte)((value >> 24) & 0x7F);
             buffer[offset + 1] = (byte)(value >> 16);
             buffer[offset + 2] = (byte)(value >> 8);

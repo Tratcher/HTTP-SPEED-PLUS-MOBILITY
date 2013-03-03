@@ -22,7 +22,8 @@ namespace ClientProtocol
             if (createHanshakeStream)
             {
                 // The HTTP/1.1 handshake already happened, we're just waiting for the first 2.0 control frame response
-                CreateStream(handshakeCancel);
+                // TODO: What is the defined priority for the handshake request?
+                CreateStream(Priority.Pri3, handshakeCancel);
             }
         }
 
@@ -60,19 +61,13 @@ namespace ClientProtocol
             }
         }
 
-        public Http2ClientStream SendRequest(IList<KeyValuePair<string, string>> pairs, X509Certificate clientCert, bool hasRequestBody, CancellationToken cancel)
+        public Http2ClientStream SendRequest(IList<KeyValuePair<string, string>> pairs, X509Certificate clientCert, int priority, bool hasRequestBody, CancellationToken cancel)
         {
-            Http2ClientStream clientStream = CreateStream(cancel);
-
+            Contract.Assert(priority >= 0 && priority <= 7);
+            Http2ClientStream clientStream = CreateStream((Priority)priority, cancel);
             int certIndex = UpdateClientCertificates(clientCert);
 
-            // Serialize the request as a SynStreamFrame and submit it. (FIN if there is no body)
-            byte[] headerBytes = FrameHelpers.SerializeHeaderBlock(pairs);
-            headerBytes = clientStream.Compressor.Compress(headerBytes);
-            SynStreamFrame frame = new SynStreamFrame(clientStream.Id, headerBytes);
-            frame.CertClot = certIndex;
-            frame.IsFin = !hasRequestBody;
-            clientStream.StartRequest(frame);
+            clientStream.StartRequest(pairs, certIndex, hasRequestBody);
 
             return clientStream;
         }
@@ -85,9 +80,9 @@ namespace ClientProtocol
             return 0;
         }
 
-        private Http2ClientStream CreateStream(CancellationToken cancel)
+        private Http2ClientStream CreateStream(Priority priority, CancellationToken cancel)
         {
-            Http2ClientStream handshakeStream = new Http2ClientStream(GetNextId(), _writeQueue, cancel);
+            Http2ClientStream handshakeStream = new Http2ClientStream(GetNextId(), priority, _writeQueue, cancel);
             _activeStreams[handshakeStream.Id] = handshakeStream;
             return handshakeStream;
         }

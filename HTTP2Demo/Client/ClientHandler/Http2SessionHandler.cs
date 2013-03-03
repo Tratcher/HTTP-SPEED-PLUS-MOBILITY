@@ -223,12 +223,19 @@ namespace ClientHandler
 
             X509Certificate clientCert = GetClientCert(request);
 
-            // TODO: Set priority from request.Properties
+            // Set priority from request.Properties
+            object obj;
+            int priority = 3; // Neutral by default
+            if (request.Properties.TryGetValue("http2.Priority", out obj) && obj is int)
+            {
+                priority = (int)obj;
+                Contract.Assert(priority >= 0 && priority <= 7);
+            }
 
             // TODO: How do I correctly determine if a request has a body?
             bool hasRequestBody = (request.Content != null);
 
-            Http2ClientStream clientStream = _clientSession.SendRequest(pairs, clientCert, hasRequestBody, cancellationToken);            
+            Http2ClientStream clientStream = _clientSession.SendRequest(pairs, clientCert, priority, hasRequestBody, cancellationToken);            
             
             // TODO: Upload
             if (hasRequestBody)

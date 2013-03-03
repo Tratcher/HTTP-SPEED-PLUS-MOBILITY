@@ -120,7 +120,7 @@ namespace ServerProtocol
                 }
 
                 _version = Constants.CurrentProtocolVersion; // TODO: Undefined?
-                _priority = 4; // Neutral // TODO: Undefined?
+                _priority = Priority.Pri3; // Neutral // TODO: Undefined?
 
                 _upgradeEnvironment = null;
             }
@@ -141,7 +141,9 @@ namespace ServerProtocol
                 _synFrame = null;
             }
 
-            _owinResponse.Body = new OutputStream(_id, _writeQueue, StartResponse);
+            _owinRequest.Set("http2.Priority", (int)_priority);
+
+            _owinResponse.Body = new OutputStream(_id, _priority, _writeQueue, StartResponse);
         }
 
         // Includes method, path&query, version, host, scheme.
@@ -240,7 +242,8 @@ namespace ServerProtocol
                 synFrame.IsFin = true;
             }
 
-            _writeQueue.WriteFrameAsync(synFrame, CancellationToken.None);
+            // SynReplyFrames go in the control queue so they get sequenced properly with GoAway frames.
+            _writeQueue.WriteFrameAsync(synFrame, Priority.Control, CancellationToken.None);
 
             return true;
         }
@@ -276,7 +279,7 @@ namespace ServerProtocol
             }
 
             DataFrame terminator = new DataFrame(_id);
-            _writeQueue.WriteFrameAsync(terminator, CancellationToken.None);
+            _writeQueue.WriteFrameAsync(terminator, _priority, CancellationToken.None);
         }
 
         private T Get<T>(string key, T fallback = default(T))

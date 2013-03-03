@@ -10,6 +10,7 @@ using Xunit;
 
 namespace ProtocolIntegration.Tests
 {
+    using SharedProtocol.Framing;
     using AppFunc = Func<IDictionary<string, object>, Task>;
 
     // Connect and share only binary frames
@@ -27,7 +28,7 @@ namespace ProtocolIntegration.Tests
             return RunSessionAsync(StatusCodeOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("GET");
-                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, false, CancellationToken.None);
+                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, 3, false, CancellationToken.None);
                 IList<KeyValuePair<string, string>> responsePairs = await clientProtocolStream.GetResponseAsync();
 
                 Assert.Equal(2, responsePairs.Count);
@@ -44,7 +45,7 @@ namespace ProtocolIntegration.Tests
             return RunSessionAsync(HelloWorldOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("POST");
-                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, false, CancellationToken.None);
+                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, 3, false, CancellationToken.None);
                 IList<KeyValuePair<string, string>> responsePairs = await clientProtocolStream.GetResponseAsync();
 
                 Assert.Equal(2, responsePairs.Count);
@@ -64,7 +65,7 @@ namespace ProtocolIntegration.Tests
             return RunSessionAsync(HelloWorldAsyncOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("POST");
-                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, false, CancellationToken.None);
+                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, 3, false, CancellationToken.None);
                 IList<KeyValuePair<string, string>> responsePairs = await clientProtocolStream.GetResponseAsync();
 
                 Assert.Equal(2, responsePairs.Count);
@@ -84,7 +85,7 @@ namespace ProtocolIntegration.Tests
             return RunSessionAsync(EchoOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("POST");
-                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, true, CancellationToken.None);
+                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, 3, true, CancellationToken.None);
                 using (StreamWriter writer = new StreamWriter(clientProtocolStream.RequestStream))
                 {
                     writer.Write("Hello World");
@@ -111,7 +112,7 @@ namespace ProtocolIntegration.Tests
             return RunSessionAsync(EchoAsyncOnlyResponse, async (clientSession, serverSession) =>
             {
                 IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("POST");
-                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, true, CancellationToken.None);
+                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, 3, true, CancellationToken.None);
                 using (StreamWriter writer = new StreamWriter(clientProtocolStream.RequestStream))
                 {
                     await writer.WriteAsync("Hello World");
@@ -128,6 +129,27 @@ namespace ProtocolIntegration.Tests
                 {
                     string read = await reader.ReadToEndAsync();
                     Assert.Equal("Hello World", read);
+                }
+            });
+        }
+
+        [Fact]
+        public Task EchoPriorityTest()
+        {
+            return RunSessionAsync(EchoPriority, async (clientSession, serverSession) =>
+            {
+                IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("POST");
+                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, 6, false, CancellationToken.None);
+
+                IList<KeyValuePair<string, string>> responsePairs = await clientProtocolStream.GetResponseAsync();
+
+                Assert.Equal(2, responsePairs.Count);
+                Assert.True(responsePairs.Contains(new KeyValuePair<string, string>(":status", "201")));
+                Assert.True(responsePairs.Contains(new KeyValuePair<string, string>(":version", "HTTP/1.1")));
+                using (StreamReader reader = new StreamReader(clientProtocolStream.ResponseStream))
+                {
+                    string read = await reader.ReadToEndAsync();
+                    Assert.Equal("6", read);
                 }
             });
         }
@@ -211,6 +233,16 @@ namespace ProtocolIntegration.Tests
             Stream requestBody = (Stream)environment["owin.RequestBody"];
             Stream responseBody = (Stream)environment["owin.ResponseBody"];
             return requestBody.CopyToAsync(responseBody);
+        }
+
+        public static Task EchoPriority(IDictionary<string, object> environment)
+        {
+            environment["owin.ResponseStatusCode"] = 201;
+            Stream responseBody = (Stream)environment["owin.ResponseBody"];
+            int priority = (int)environment["http2.Priority"];
+            StreamWriter writer = new StreamWriter(responseBody);
+            writer.AutoFlush = true;
+            return writer.WriteAsync(priority.ToString());
         }
 
         private static TransportInformation CreateTransportInfo()

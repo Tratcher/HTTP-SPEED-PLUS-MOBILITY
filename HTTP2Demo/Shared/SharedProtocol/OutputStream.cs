@@ -11,17 +11,19 @@ namespace SharedProtocol
         private WriteQueue _writeQueue;
         private Action _onStart;
         private int _streamId;
+        private Priority _priority;
 
-        public OutputStream(int streamId, WriteQueue writeQueue)
-            : this (streamId, writeQueue, () => {})
+        public OutputStream(int streamId, Priority priority, WriteQueue writeQueue)
+            : this(streamId, priority, writeQueue, () => { })
         {
         }
 
-        public OutputStream(int streamId, WriteQueue writeQueue, Action onStart)
+        public OutputStream(int streamId, Priority priority, WriteQueue writeQueue, Action onStart)
         {
             _streamId = streamId;
             _writeQueue = writeQueue;
             _onStart = onStart;
+            _priority = priority;
         }
 
         public override bool CanRead
@@ -53,13 +55,13 @@ namespace SharedProtocol
         public override void Flush()
         {
             _onStart();
-            _writeQueue.FlushAsync(CancellationToken.None).Wait();
+            _writeQueue.FlushAsync(_priority, CancellationToken.None).Wait();
         }
 
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
             _onStart();
-            return _writeQueue.FlushAsync(cancellationToken);
+            return _writeQueue.FlushAsync(_priority, cancellationToken);
         }
 
         public override long Seek(long offset, SeekOrigin origin)
@@ -118,7 +120,7 @@ namespace SharedProtocol
             _onStart();
             DataFrame dataFrame = new DataFrame(_streamId, new ArraySegment<byte>(buffer, offset, count));
             // TODO: Flags?
-            return _writeQueue.WriteFrameAsync(dataFrame, cancellationToken);
+            return _writeQueue.WriteFrameAsync(dataFrame, _priority, cancellationToken);
         }
 
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)

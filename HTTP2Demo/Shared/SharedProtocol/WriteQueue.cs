@@ -29,9 +29,9 @@ namespace SharedProtocol
         }
 
         // Queue up a fully rendered frame to send
-        public Task WriteFrameAsync(Frame frame, CancellationToken cancel)
+        public Task WriteFrameAsync(Frame frame, Priority priority, CancellationToken cancel)
         {
-            QueueEntry entry = new QueueEntry(frame.Buffer, cancel);
+            QueueEntry entry = new QueueEntry(frame.Buffer, priority, cancel);
             _messageQueue.Enqueue(entry);
             SignalDataAvailable();
             return entry.Task;
@@ -39,14 +39,14 @@ namespace SharedProtocol
 
         // Completes when any frames ahead of it have been processed
         // TODO: Have this only flush messages from one specific HTTP2Stream
-        public Task FlushAsync(/*int streamId, */ CancellationToken cancel)
+        public Task FlushAsync(/*int streamId, */ Priority priority, CancellationToken cancel)
         {
             if (_messageQueue.Count == 0)
             {
                 return Task.FromResult<object>(null);
             }
 
-            QueueEntry entry = new QueueEntry(null, cancel);
+            QueueEntry entry = new QueueEntry(null, priority, cancel);
             _messageQueue.Enqueue(entry);
             SignalDataAvailable();
             return entry.Task;
@@ -115,10 +115,12 @@ namespace SharedProtocol
             private TaskCompletionSource<object> _tcs;
             private byte[] _buffer; // null for FlushAsync
             private CancellationToken _cancel;
+            private Priority _priority;
 
-            public QueueEntry(byte[] buffer, CancellationToken cancel)
+            public QueueEntry(byte[] buffer, Priority priority, CancellationToken cancel)
             {
                 _buffer = buffer;
+                _priority = priority;
                 _tcs = new TaskCompletionSource<object>();
                 _cancel = cancel;
             }

@@ -18,7 +18,7 @@ namespace SharedProtocol
         protected CompressionProcessor _compressor;
         protected CancellationToken _cancel;
         protected int _version;
-        protected int _priority;
+        protected Priority _priority;
         protected Stream _incomingStream;
         protected bool _disposed;
 
@@ -35,7 +35,7 @@ namespace SharedProtocol
             get { return _id; }
         }
 
-        public CompressionProcessor Compressor
+        protected CompressionProcessor Compressor
         {
             get { return _compressor; }
         }

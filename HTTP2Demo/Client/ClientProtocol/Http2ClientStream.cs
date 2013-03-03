@@ -16,11 +16,12 @@ namespace ClientProtocol
         private TaskCompletionSource<SynReplyFrame> _responseTask;
         private Stream _outputStream;
 
-        public Http2ClientStream(int id, WriteQueue writeQueue, CancellationToken cancel)
+        public Http2ClientStream(int id, Priority priority, WriteQueue writeQueue, CancellationToken cancel)
             : base(id, writeQueue, cancel)
         {
+            _priority = priority;
             _responseTask = new TaskCompletionSource<SynReplyFrame>();
-            _outputStream = new OutputStream(id, writeQueue);
+            _outputStream = new OutputStream(id, _priority, writeQueue);
         }
 
         public Stream RequestStream
@@ -41,10 +42,21 @@ namespace ClientProtocol
             }
         }
 
-        public void StartRequest(SynStreamFrame frame)
+        public void StartRequest(IList<KeyValuePair<string, string>> pairs, int certIndex, bool hasRequestBody)
         {
+            // Serialize the request as a SynStreamFrame and submit it. (FIN if there is no body)
+            byte[] headerBytes = FrameHelpers.SerializeHeaderBlock(pairs);
+            headerBytes = Compressor.Compress(headerBytes);
+            SynStreamFrame frame = new SynStreamFrame(_id, headerBytes);
+            frame.CertClot = certIndex;
+            frame.Priority = _priority;
+            frame.IsFin = !hasRequestBody;
+
             // TODO: Set stream state
-            _writeQueue.WriteFrameAsync(frame, _cancel);
+
+            // Note that SynStreamFrames have to be sent in sequential ID order, so they're 
+            // put into the control priority queue.
+            _writeQueue.WriteFrameAsync(frame, Priority.Control, _cancel);
         }
 
         public void SetReply(SynReplyFrame frame)
@@ -76,7 +88,7 @@ namespace ClientProtocol
         public void EndRequest()
         {
             DataFrame terminator = new DataFrame(_id);
-            _writeQueue.WriteFrameAsync(terminator, _cancel);
+            _writeQueue.WriteFrameAsync(terminator, _priority, _cancel);
         }
 
         protected override void Dispose(bool disposing)

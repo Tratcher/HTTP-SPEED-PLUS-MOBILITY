@@ -64,6 +64,7 @@
     <Compile Include="Framing\GoAwayStatusCode.cs" />
     <Compile Include="Framing\HeadersFrame.cs" />
     <Compile Include="Framing\PingFrame.cs" />
+    <Compile Include="Framing\Priority.cs" />
     <Compile Include="Framing\ResetStatusCode.cs" />
     <Compile Include="Framing\RstStreamFrame.cs" />
     <Compile Include="Framing\SettingsIds.cs" />

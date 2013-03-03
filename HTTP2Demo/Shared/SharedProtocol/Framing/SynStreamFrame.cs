@@ -51,15 +51,15 @@ namespace SharedProtocol.Framing
             }
         }
 
-        public int Priority
+        public Priority Priority
         {
             get
             {
-                return FrameHelpers.GetHigh3BitsAt(Buffer, 16);
+                return (Priority)FrameHelpers.GetHigh3BitsAt(Buffer, 16);
             }
             set
             {
-                FrameHelpers.SetHigh3BitsAt(Buffer, 16, value);
+                FrameHelpers.SetHigh3BitsAt(Buffer, 16, (int)value);
             }
         }
 
