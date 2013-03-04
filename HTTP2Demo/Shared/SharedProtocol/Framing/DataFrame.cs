@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 
 namespace SharedProtocol.Framing
 {
@@ -20,6 +21,7 @@ namespace SharedProtocol.Framing
             IsControl = false;
             FrameLength = data.Count;
             StreamId = streamId;
+            Contract.Assert(data.Array != null);
             System.Buffer.BlockCopy(data.Array, data.Offset, Buffer, Constants.FramePreambleSize, data.Count);
         }
 

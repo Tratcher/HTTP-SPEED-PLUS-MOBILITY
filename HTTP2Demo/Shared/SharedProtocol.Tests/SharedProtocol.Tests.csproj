@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compression\CompressionTests.cs" />
+    <Compile Include="IO\PriorityQueueTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IO\QueueStreamTests.cs" />
   </ItemGroup>

@@ -36,7 +36,7 @@ namespace SharedProtocol.IO
         // TODO: Have this only flush messages from one specific HTTP2Stream
         public Task FlushAsync(/*int streamId, */ Priority priority, CancellationToken cancel)
         {
-            if (!IsDataAvailable())
+            if (!IsDataAvailable)
             {
                 return Task.FromResult<object>(null);
             }
@@ -57,9 +57,12 @@ namespace SharedProtocol.IO
             return _messageQueue.TryDequeue(out entry);
         }
 
-        private bool IsDataAvailable()
+        private bool IsDataAvailable
         {
-            return _messageQueue.IsDataAvailable();
+            get
+            {
+                return _messageQueue.IsDataAvailable;
+            }
         }
 
         public async Task PumpToStreamAsync()
@@ -109,7 +112,7 @@ namespace SharedProtocol.IO
         {
             _readWaitingForData = new TaskCompletionSource<object>();
 
-            if (IsDataAvailable() || _disposed)
+            if (IsDataAvailable || _disposed)
             {
                 // Race, data could have arrived before we created the TCS.
                 _readWaitingForData.TrySetResult(null);

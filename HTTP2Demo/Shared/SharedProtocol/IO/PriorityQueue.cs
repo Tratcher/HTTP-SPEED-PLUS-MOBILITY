@@ -58,9 +58,12 @@ namespace SharedProtocol.IO
             }
         }
 
-        public bool IsDataAvailable()
+        public bool IsDataAvailable
         {
-            return _queue.Count > 0;
+            get
+            {
+                return _queue.Count > 0;
+            }
         }
     }
 }
