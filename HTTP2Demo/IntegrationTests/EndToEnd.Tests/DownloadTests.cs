@@ -100,12 +100,46 @@ namespace EndToEnd.Tests
             }
         }
 
+        [Theory]
+        [InlineData("Microsoft.Owin.Host.HttpSys")]
+        // [InlineData("Firefly")]
+        public async Task Http2SessionTracker_Http2Middleware_LargeDownload(string server)
+        {
+            using (WebApplication.Start(
+                options =>
+                {
+                    options.Url = Url;
+                    options.Server = server;
+                },
+                builder =>
+                {
+                    builder.UseHttp2(http2Branch => http2Branch.Run((AppFunc)DownloadLargeAsyncWrite));
+                    builder.Run((AppFunc)NextNotImplemented);
+                }))
+            {
+                using (HttpClient client = new HttpClient(
+                    new Http2SessionTracker(do11Handshake: true, fallbackHandler: new NotImplementedHandler())))
+                {
+                    HttpResponseMessage response = await client.GetAsync(Url);
+                    response.EnsureSuccessStatusCode();
+                    byte[] body = await response.Content.ReadAsByteArrayAsync();
+                    Assert.Equal(0x1FFFFFF, body.Length);
+                }
+            }
+        }
+
         public async Task DownloadMultipleWrites(IDictionary<string, object> environment)
         {
             OwinResponse response = new OwinResponse(environment);
             await response.WriteAsync("Hello World");
             await response.WriteAsync("Hello World");
             await response.WriteAsync("Hello World");
+        }
+
+        public async Task DownloadLargeAsyncWrite(IDictionary<string, object> environment)
+        {
+            OwinResponse response = new OwinResponse(environment);
+            await response.WriteAsync(new byte[0x1FFFFFF]); // One bit larger than the max data frame size of 0xFFFFFF
         }
 
         private Task NextNotImplemented(IDictionary<string, object> environment)

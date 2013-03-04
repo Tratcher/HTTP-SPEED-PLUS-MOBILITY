@@ -144,7 +144,8 @@ namespace ServerProtocol
 
             _owinRequest.Set("http2.Priority", (int)_priority);
 
-            _owinResponse.Body = new OutputStream(_id, _priority, _writeQueue, StartResponse);
+            _outputStream = new OutputStream(_id, _priority, _writeQueue, StartResponse);
+            _owinResponse.Body = _outputStream;
         }
 
         // Includes method, path&query, version, host, scheme.

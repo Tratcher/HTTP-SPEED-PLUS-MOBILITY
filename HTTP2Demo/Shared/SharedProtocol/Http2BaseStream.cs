@@ -22,6 +22,7 @@ namespace SharedProtocol
         protected Priority _priority;
         protected Stream _incomingStream;
         protected bool _disposed;
+        protected OutputStream _outputStream;
 
         protected Http2BaseStream(int id, WriteQueue writeQueue, CancellationToken cancel)
         {
@@ -61,9 +62,10 @@ namespace SharedProtocol
             }
         }
 
-        public void IncreaseWindowSize(int delta)
+        public void UpdateWindowSize(int delta)
         {
-            // throw new NotImplementedException();
+            Contract.Assert(_outputStream != null);
+            _outputStream.AddFlowControlCredit(delta);
         }
 
         public void Dispose()

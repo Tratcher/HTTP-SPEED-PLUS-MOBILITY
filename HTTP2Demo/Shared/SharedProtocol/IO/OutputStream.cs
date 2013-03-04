@@ -6,12 +6,21 @@ using System.Threading.Tasks;
 
 namespace SharedProtocol.IO
 {
+    /// <summary>
+    /// This stream generates HTTP/2.0 binary data frames, one per write.
+    /// It also tracks flow control and causes backpressure by not completing writes
+    /// when the flow control credit runs out.
+    /// </summary>
     public class OutputStream : Stream
     {
-        private WriteQueue _writeQueue;
-        private Action _onStart;
-        private int _streamId;
-        private Priority _priority;
+        private readonly WriteQueue _writeQueue;
+        private readonly int _streamId;
+        private readonly Priority _priority;
+        private readonly Action _onStart;
+
+        private volatile int _flowControlCredit;
+        private TaskCompletionSource<object> _flowCreditAvailable;
+        private bool _disposed;
 
         public OutputStream(int streamId, Priority priority, WriteQueue writeQueue)
             : this(streamId, priority, writeQueue, () => { })
@@ -24,6 +33,8 @@ namespace SharedProtocol.IO
             _writeQueue = writeQueue;
             _onStart = onStart;
             _priority = priority;
+            _flowControlCredit = Constants.DefaultFlowControlCredit; // TODO: Configurable via persisted settings
+            _flowCreditAvailable = new TaskCompletionSource<object>();
         }
 
         public override bool CanRead
@@ -61,6 +72,7 @@ namespace SharedProtocol.IO
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
             _onStart();
+            // TODO: await a backpressure task until we get a window update.
             return _writeQueue.FlushAsync(_priority, cancellationToken);
         }
 
@@ -111,16 +123,34 @@ namespace SharedProtocol.IO
 
         public override void Write(byte[] buffer, int offset, int count)
         {
-            WriteAsync(buffer, offset, count);
+            WriteAsync(buffer, offset, count).Wait();
         }
 
-        public override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        // Does not support overlapped writes due to flow control backpressure implementation.
+        public async override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
+            CheckDisposed();
             // TODO: Compression?
             _onStart();
-            DataFrame dataFrame = new DataFrame(_streamId, new ArraySegment<byte>(buffer, offset, count));
-            // TODO: Flags?
-            return _writeQueue.WriteFrameAsync(dataFrame, _priority, cancellationToken);
+            int written = 0;
+            do
+            {
+                if (_flowControlCredit <= 0)
+                {
+                    // await a backpressure task until we get a window update.
+                    await WaitForFlowCreditAsync(cancellationToken);
+                }
+
+                int subCount = Math.Min(Math.Min(_flowControlCredit, count - written), Constants.MaxDataFrameContentSize);
+                DataFrame dataFrame = new DataFrame(_streamId, new ArraySegment<byte>(buffer, offset, subCount));
+                // TODO: Flags? Compression?
+                written += subCount;
+                offset += subCount;
+                _flowControlCredit -= written;
+
+                await _writeQueue.WriteFrameAsync(dataFrame, _priority, cancellationToken);
+            }
+            while (written < count);
         }
 
         public override IAsyncResult BeginWrite(byte[] buffer, int offset, int count, AsyncCallback callback, object state)
@@ -135,6 +165,58 @@ namespace SharedProtocol.IO
             // TODO:
             // throw new NotImplementedException();
             base.EndWrite(asyncResult);
+        }
+
+        public Task WaitForFlowCreditAsync(CancellationToken cancellationToken)
+        {
+            // TODO: Cancel _flowCreditAvailable if cancellationToken becomes cancelled.
+            cancellationToken.ThrowIfCancellationRequested();
+
+            _flowCreditAvailable = new TaskCompletionSource<object>();
+
+            if (_disposed)
+            {
+                _flowCreditAvailable.TrySetCanceled();
+            }
+            else if (_flowControlCredit > 0)
+            {
+                _flowCreditAvailable.TrySetResult(null);
+            }
+
+            return _flowCreditAvailable.Task;
+        }
+
+        // Credit can go negative if the settings change and data has already been sent.
+        public void AddFlowControlCredit(int delta)
+        {
+            _flowControlCredit += delta;
+            if (_disposed)
+            {
+                _flowCreditAvailable.TrySetCanceled();
+            }
+            else if (_flowControlCredit > 0)
+            {
+                _flowCreditAvailable.TrySetResult(null);
+            }
+        }
+
+        private void CheckDisposed()
+        {
+            if (_disposed)
+            {
+                throw new ObjectDisposedException(typeof(OutputStream).FullName);
+            }
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            _disposed = true;
+            if (disposing)
+            {
+                _flowCreditAvailable.TrySetCanceled();
+            }
+
+            base.Dispose(disposing);
         }
     }
 }

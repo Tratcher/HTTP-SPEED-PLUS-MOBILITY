@@ -90,7 +90,7 @@ namespace SharedProtocol
                     case ControlFrameType.WindowUpdate:
                         WindowUpdateFrame windowFrame = (WindowUpdateFrame)frame;
                         stream = GetStream(windowFrame.StreamId);
-                        stream.IncreaseWindowSize(windowFrame.Delta);
+                        stream.UpdateWindowSize(windowFrame.Delta);
                         break;
                     default:
                         throw new NotImplementedException(frame.FrameType.ToString());

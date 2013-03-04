@@ -15,7 +15,6 @@ namespace ClientProtocol
     public class Http2ClientStream : Http2BaseStream
     {
         private TaskCompletionSource<SynReplyFrame> _responseTask;
-        private Stream _outputStream;
 
         public Http2ClientStream(int id, Priority priority, WriteQueue writeQueue, CancellationToken cancel)
             : base(id, writeQueue, cancel)
@@ -69,7 +68,7 @@ namespace ClientProtocol
             }
             else
             {
-                _incomingStream = new QueueStream();
+                _incomingStream = new QueueStream(); // TODO: Needs to handle flow control, send window updates.
             }
             // Dispatch, as TrySetResult will synchronously execute the waiters callback and block our message pump.
             Task.Run(() => _responseTask.TrySetResult(frame));
