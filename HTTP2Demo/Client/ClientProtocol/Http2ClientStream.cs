@@ -68,7 +68,7 @@ namespace ClientProtocol
             }
             else
             {
-                _incomingStream = new QueueStream(); // TODO: Needs to handle flow control, send window updates.
+                _incomingStream = new InputStream(Constants.DefaultFlowControlCredit, SendWindowUpdate); // TODO: Needs to handle flow control, send window updates.
             }
             // Dispatch, as TrySetResult will synchronously execute the waiters callback and block our message pump.
             Task.Run(() => _responseTask.TrySetResult(frame));

@@ -51,6 +51,7 @@
     <Compile Include="Credentials\CredentialManager.cs" />
     <Compile Include="Credentials\CredentialSlot.cs" />
     <Compile Include="IO\DuplexStream.cs" />
+    <Compile Include="IO\InputStream.cs" />
     <Compile Include="IO\PriorityQueue.cs" />
     <Compile Include="IO\PriorityQueueEntry.cs" />
     <Compile Include="Settings\EmptySettingsManager.cs" />

@@ -56,7 +56,7 @@ namespace ServerProtocol
             }
             else
             {
-                _incomingStream = new QueueStream();
+                _incomingStream = new InputStream(Constants.DefaultFlowControlCredit, SendWindowUpdate);
             }
         }
 

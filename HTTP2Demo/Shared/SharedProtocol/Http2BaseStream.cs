@@ -68,6 +68,12 @@ namespace SharedProtocol
             _outputStream.AddFlowControlCredit(delta);
         }
 
+        protected void SendWindowUpdate(int delta)
+        {
+            WindowUpdateFrame windowUpdate = new WindowUpdateFrame(Id, delta);
+            _writeQueue.WriteFrameAsync(windowUpdate, Priority.Control, _cancel);
+        }
+
         public void Dispose()
         {
             Dispose(true);
