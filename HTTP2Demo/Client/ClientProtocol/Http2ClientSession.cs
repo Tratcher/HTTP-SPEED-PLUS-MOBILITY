@@ -17,10 +17,15 @@ namespace ClientProtocol
     {
         private int _lastId = -1;
 
-        public Http2ClientSession(bool createHanshakeStream, CancellationToken handshakeCancel)
+        public Http2ClientSession(Stream stream, bool createHandshakeStream, CancellationToken handshakeCancel, CancellationToken cancel)
         {
             _nextPingId = 1; // Client pings are odd
-            if (createHanshakeStream)
+            _sessionStream = stream;
+            _cancel = cancel;
+            _writeQueue = new WriteQueue(_sessionStream);
+            _frameReader = new FrameReader(_sessionStream, true, _cancel);
+
+            if (createHandshakeStream)
             {
                 // The HTTP/1.1 handshake already happened, we're just waiting for the first 2.0 control frame response
                 // TODO: What is the defined priority for the handshake request?
@@ -28,13 +33,8 @@ namespace ClientProtocol
             }
         }
 
-        public override Task Start(Stream stream, CancellationToken cancel)
+        public Task Start()
         {
-            Contract.Assert(_sessionStream == null, "Start called more than once");
-            _sessionStream = stream;
-            _cancel = cancel;
-            _writeQueue = new WriteQueue(_sessionStream);
-            _frameReader = new FrameReader(_sessionStream, true, _cancel);
             return StartPumps();
         }
 

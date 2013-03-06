@@ -32,8 +32,6 @@ namespace SharedProtocol
             _settingsManager = new EmptySettingsManager();
         }
 
-        public abstract Task Start(Stream stream, CancellationToken cancel);
-
         protected Task StartPumps()
         {
             // TODO: Assert not started

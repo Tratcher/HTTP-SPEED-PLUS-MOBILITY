@@ -146,7 +146,7 @@ namespace SharedProtocol.IO
                 // TODO: Flags? Compression?
                 written += subCount;
                 offset += subCount;
-                _flowControlCredit -= written;
+                _flowControlCredit -= subCount;
 
                 await _writeQueue.WriteFrameAsync(dataFrame, _priority, cancellationToken);
             }
@@ -167,7 +167,7 @@ namespace SharedProtocol.IO
             base.EndWrite(asyncResult);
         }
 
-        public Task WaitForFlowCreditAsync(CancellationToken cancellationToken)
+        private Task WaitForFlowCreditAsync(CancellationToken cancellationToken)
         {
             // TODO: Cancel _flowCreditAvailable if cancellationToken becomes cancelled.
             cancellationToken.ThrowIfCancellationRequested();

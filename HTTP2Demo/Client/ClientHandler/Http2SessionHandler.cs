@@ -121,11 +121,11 @@ namespace ClientHandler
                         }
                     }
 
-                    _clientSession = new Http2ClientSession(createHanshakeStream: didHandshake, 
-                        handshakeCancel: didHandshake ? cancel : CancellationToken.None);
+                    _clientSession = new Http2ClientSession(sessionStream, createHandshakeStream: didHandshake,
+                        handshakeCancel: didHandshake ? cancel : CancellationToken.None, cancel: CancellationToken.None);
 
                     // TODO: Listen to task for errors? Dispose/Abort CT?
-                    Task pumpTasks = _clientSession.Start(sessionStream, CancellationToken.None);
+                    Task pumpTasks = _clientSession.Start();
 
                     _connectingLock.Release(999); // Unblock all, this method no longer needs to be one at a time.
                     return didHandshake;

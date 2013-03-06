@@ -34,7 +34,7 @@ namespace ServerProtocol
             _credentialManager = new CredentialManager();
         }
 
-        public override Task Start(Stream stream, CancellationToken cancel)
+        public Task Start(Stream stream, CancellationToken cancel)
         {
             Contract.Assert(_sessionStream == null, "Start called more than once");
             bool handshakeHappened = _upgradeRequest != null;

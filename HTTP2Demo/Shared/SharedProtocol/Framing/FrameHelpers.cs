@@ -95,7 +95,7 @@ namespace SharedProtocol.Framing
         public static void Set24BitsAt(byte[] buffer, int offset, int value)
         {
             Contract.Assert(offset >= 0 && offset + 2 < buffer.Length);
-            Contract.Assert(value >= 0 && value <= 0xFFFFF);
+            Contract.Assert(value >= 0 && value <= 0xFFFFFF);
             buffer[offset] = (byte)(value >> 16);
             buffer[offset + 1] = (byte)(value >> 8);
             buffer[offset + 2] = (byte)value;

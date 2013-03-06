@@ -80,11 +80,11 @@ namespace ProtocolIntegration.Tests
             DuplexStream serverStream = clientStream.GetOpositeStream();
 
             Task clientTask, serverTask;
-            using (Http2ClientSession clientSession = new Http2ClientSession(false, CancellationToken.None))
+            using (Http2ClientSession clientSession = new Http2ClientSession(clientStream, false, CancellationToken.None, CancellationToken.None))
             {
                 using (Http2ServerSession serverSession = new Http2ServerSession(app, new TransportInformation()))
                 {
-                    clientTask = clientSession.Start(clientStream, CancellationToken.None);
+                    clientTask = clientSession.Start();
                     serverTask = serverSession.Start(serverStream, CancellationToken.None);
 
                     await sessionOperations(clientSession, serverSession);

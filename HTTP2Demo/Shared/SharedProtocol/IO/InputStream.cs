@@ -24,6 +24,9 @@ namespace SharedProtocol.IO
             _windowSize += delta;
             if (_windowSize > 0)
             {
+                // TODO: This is where any smart flow control could hook in.
+                // E.g. should we really send a flow control update if the app only read one byte?
+                // Should we scale the window based on round trip time? Bandwidth? Rate of app drainage?
                 _sendWindowUpdate(delta);
             }
         }
