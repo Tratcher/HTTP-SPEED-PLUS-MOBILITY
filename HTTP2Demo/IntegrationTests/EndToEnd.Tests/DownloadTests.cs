@@ -21,7 +21,7 @@ namespace EndToEnd.Tests
         [Theory]
         [InlineData("Microsoft.Owin.Host.HttpListener")]
         [InlineData("Microsoft.Owin.Host.HttpSys")]
-        // [InlineData("Firefly")]
+        [InlineData("Firefly")]
         public async Task HttpClientHandler_Http2Middleware_DownloadOn11(string server)
         {
             using (WebApplication.Start(
@@ -48,7 +48,7 @@ namespace EndToEnd.Tests
 
         [Theory]
         [InlineData("Microsoft.Owin.Host.HttpSys")]
-        // [InlineData("Firefly")]
+        [InlineData("Firefly")]
         public async Task Http2SessionTracker_Http2Middleware_DownloadOn20(string server)
         {
             using (WebApplication.Start(
@@ -100,9 +100,9 @@ namespace EndToEnd.Tests
             }
         }
 
-        [Theory] // TODO: Won't work until flow control is implemented on the receiving stream.
+        [Theory]
         [InlineData("Microsoft.Owin.Host.HttpSys")]
-        // [InlineData("Firefly")]
+        [InlineData("Firefly")]
         public async Task Http2SessionTracker_Http2Middleware_LargeDownload(string server)
         {
             using (WebApplication.Start(

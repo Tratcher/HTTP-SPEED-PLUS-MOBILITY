@@ -19,7 +19,7 @@ namespace EndToEnd.Tests
 
         [Theory]
         [InlineData("Microsoft.Owin.Host.HttpSys")]
-        // [InlineData("Firefly")]
+        [InlineData("Firefly")]
         public async Task HttpClientHandler_Http2Middleware_FallbackTo11(string server)
         {
             using (WebApplication.Start(
@@ -45,7 +45,7 @@ namespace EndToEnd.Tests
         [Theory]
         [InlineData("Microsoft.Owin.Host.HttpListener")]
         [InlineData("Microsoft.Owin.Host.HttpSys")]
-        // [InlineData("Firefly")]
+        [InlineData("Firefly")]
         public async Task Http2SessionTracker_NoHttp2Middleware_FallbackTo11(string server)
         {
             using (WebApplication.Start(
@@ -70,7 +70,7 @@ namespace EndToEnd.Tests
 
         [Theory]
         [InlineData("Microsoft.Owin.Host.HttpSys")]
-        // [InlineData("Firefly")]
+        [InlineData("Firefly")]
         public async Task Http2SessionTracker_Http2Middleware_Upgrade(string server)
         {
             using (WebApplication.Start(
@@ -97,7 +97,7 @@ namespace EndToEnd.Tests
         [Theory]
         [InlineData("Microsoft.Owin.Host.HttpListener")]
         [InlineData("Microsoft.Owin.Host.HttpSys")]
-        // [InlineData("Firefly")]
+        // [InlineData("Firefly")] // DOS Hangs the server. v0.6.3
         public void Http2SessionTrackerWithoutHandshake_Http11Server_Failure(string server)
         {
             using (WebApplication.Start(

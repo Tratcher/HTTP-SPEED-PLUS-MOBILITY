@@ -21,7 +21,7 @@ namespace EndToEnd.Tests
         [Theory]
         [InlineData("Microsoft.Owin.Host.HttpListener")]
         [InlineData("Microsoft.Owin.Host.HttpSys")]
-        // [InlineData("Firefly")]
+        [InlineData("Firefly")]
         public async Task HttpClientHandler_Http2Middleware_UploadOn11(string server)
         {
             using (WebApplication.Start(
@@ -48,7 +48,7 @@ namespace EndToEnd.Tests
 
         [Theory]
         [InlineData("Microsoft.Owin.Host.HttpSys")]
-        // [InlineData("Firefly")]
+        [InlineData("Firefly")]
         public async Task Http2SessionTracker_Http2Middleware_UploadOn20(string server)
         {
             using (WebApplication.Start(
