@@ -42,6 +42,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ProtocolIntegration.Tests",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "EndToEnd.Tests", "IntegrationTests\EndToEnd.Tests\EndToEnd.Tests.csproj", "{D118A75B-06DD-4F85-8CB4-A207FCA5CB52}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".Welcome", ".Welcome", "{704883B9-54FB-4C2D-81E0-CED6B9FA9804}"
+	ProjectSection(SolutionItems) = preProject
+		ProtocolNotes.txt = ProtocolNotes.txt
+		ToDo.txt = ToDo.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(TestCaseManagementSettings) = postSolution
 		CategoryFile = SMDemoAll.vsmdi

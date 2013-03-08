@@ -1,0 +1,39 @@
+
+Http2 Draft 01:
+http://tools.ietf.org/html/draft-ietf-httpbis-http2-01
+
+Handshake:
+- Since the HTTP/1.1 handshake substitutes for the first SYN_STREAM frame, how should the SYN_STREAM frame fields be presented in the HTTP/1.1 upgrade request?
+-- Version - 3
+-- Flags - Fin?
+-- Stream Id? 1?
+-- Priority?
+-- Slot - 1 if a client cert was provided during the ssl handshake, 0 otherwise
+
+Protocol Detection:
+- Client side:
+-- Could use pre-shared knowledge (e.g. I know foo.com only supports 2.0 binary frames on port 80), but doesn't work on the general internet. It also has back compat issues.
+-- Could use upgrade handshake as outline in draft 00 or 01. Unfortunately you can't pipeline additional requests until you know if the upgrade succeeded or failed.
+Client or server:
+-- Could use different ports, but you'd immediately get blocked by firewalls, etc..
+Server:
+- Guess and check: The server can accept HTTP/2.0 binary frames and HTTP/1.1 text frames on the same port, so long as both are not used on the same connection.
+-- HTTP/1.1 requests always start with a method, (1 or more characters between 0x00 and 0x7F except CTLs or separators) e.g. GET, POST, etc..
+-- HTTP/2.0 sessions always start with a control frame (assuming you're not doing the 1.1 upgrade handshake), which always starts with a control bit (0x80) and version (3), so the first two bytes are always 0x8003.
+
+Data frames:
+- Compression - Why is compression indicated per frame and not in the original SYN_STREAM or SYN_REPLY?
+-- This makes it harder to set up the response stream, because I don't know if I'll need to add a decompression layer until the first data frame arrives.
+-- Having it on the data frame implies that it could vary frame to frame, which would be un-manageable.
+
+Headers:
+- Compression - Why is compression mandatory? I want to turn it off for debugging.
+- Encoding - Please declare an official header value encoding. Every header currently does something different. e.g. UTF-8 or punycode host header. Mime encoding, quoted printable, base64, etc..
+
+Push:
+- Over-optimized for browsers, negatively impacts crawlers.
+- Needs scoping -
+-- Breaks cache - What if the pushed resources were already cached, you just wasted my bandwidth.
+-- Needs content-type filtering - Should only push files that match the original request's Accept header
+-- Needs to be opt-in, or at least opt-out.  Right now there is no way to prevent the server from sending extra stuff
+--- (Except a hack where you can set SETTINGS_MAX_CONCURRENT_STREAMS to zero)

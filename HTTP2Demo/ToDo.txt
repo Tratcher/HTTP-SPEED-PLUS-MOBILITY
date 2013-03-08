@@ -1,0 +1,19 @@
+Body compression/decompression
+
+Cancel/Abort:
+- Connection disconnect - Reset/Abort all streams
+- Receive a stream reset - Abort request
+- Client side request cancellation - send reset
+- Server side request cancellation (exception during executing) - send reset
+
+GoAway
+
+Additional Headers frames (Trailers)
+
+Credential (client certs)
+
+Authentication
+
+Server Push
+
+1.1 fallback.  If we get any response but 101, download the 1.1 response.  Today we reset the connection and fall back to the old 1.1 stack.
