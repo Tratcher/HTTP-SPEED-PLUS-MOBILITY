@@ -90,6 +90,11 @@ namespace SharedProtocol
                         stream = GetStream(windowFrame.StreamId);
                         stream.UpdateWindowSize(windowFrame.Delta);
                         break;
+                    case ControlFrameType.RstStream:
+                        RstStreamFrame resetFrame = (RstStreamFrame)frame;
+                        stream = GetStream(resetFrame.StreamId);
+                        stream.Reset(resetFrame.StatusCode);
+                        break;
                     default:
                         throw new NotImplementedException(frame.FrameType.ToString());
                 }

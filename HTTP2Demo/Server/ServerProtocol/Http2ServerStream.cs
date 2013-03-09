@@ -311,6 +311,12 @@ namespace ServerProtocol
             Dispose();
         }
 
+        public override void Reset(ResetStatusCode statusCode)
+        {
+            // TODO: Trigger the cancellation token in a Task.Run so we don't block the message pump.
+            base.Reset(statusCode);
+        }
+
         private T Get<T>(string key, T fallback = default(T))
         {
             object obj;

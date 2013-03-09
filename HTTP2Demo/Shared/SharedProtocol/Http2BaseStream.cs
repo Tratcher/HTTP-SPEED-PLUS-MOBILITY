@@ -74,6 +74,17 @@ namespace SharedProtocol
             _writeQueue.WriteFrameAsync(windowUpdate, Priority.Control, _cancel);
         }
 
+        public virtual void Reset(ResetStatusCode statusCode)
+        {
+            if (_incomingStream != null && _incomingStream != Stream.Null)
+            {
+                InputStream inputStream = (InputStream)_incomingStream;
+                inputStream.Abort(statusCode.ToString());
+            }
+            _writeQueue.PurgeStream(Id);
+            Dispose();
+        }
+
         public void Dispose()
         {
             Dispose(true);

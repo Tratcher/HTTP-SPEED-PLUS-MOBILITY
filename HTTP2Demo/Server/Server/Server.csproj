@@ -34,9 +34,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Firefly, Version=0.6.0.0, Culture=neutral, PublicKeyToken=1d0e30769d803c61, processorArchitecture=MSIL">
+    <Reference Include="Firefly, Version=0.6.3.0, Culture=neutral, PublicKeyToken=1d0e30769d803c61, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\Firefly.0.6\lib\Firefly.dll</HintPath>
+      <HintPath>..\..\packages\Firefly.0.6.3\lib\Firefly.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.AspNet.WebApi.Owin, Version=0.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

@@ -11,6 +11,8 @@ namespace SharedProtocol.IO
     public class QueueStream : Stream
     {
         private bool _disposed;
+        private bool _aborted;
+        private string _abortMessage;
         private ConcurrentQueue<byte[]> _bufferedData;
         private ArraySegment<byte> _topBuffer;
         private SemaphoreSlim _readLock;
@@ -75,6 +77,8 @@ namespace SharedProtocol.IO
                         byte[] topBuffer = null;
                         while (!_bufferedData.TryDequeue(out topBuffer))
                         {
+                            // Let buffered data get drained before signaling an abort.
+                            CheckAborted();
                             if (_disposed) return 0;
                             WaitForDataAsync().Wait();
                         }
@@ -128,6 +132,8 @@ namespace SharedProtocol.IO
                         byte[] topBuffer = null;
                         while (!_bufferedData.TryDequeue(out topBuffer))
                         {
+                            // Let buffered data get drained before signaling an abort.
+                            CheckAborted();
                             if (_disposed) return 0;
                             await WaitForDataAsync();
                             cancellationToken.ThrowIfCancellationRequested();
@@ -259,6 +265,21 @@ namespace SharedProtocol.IO
             }
 
             return _readWaitingForData.Task;
+        }
+
+        public void Abort(string message)
+        {
+            _aborted = true;
+            _abortMessage = message;
+            Dispose();
+        }
+
+        private void CheckAborted()
+        {
+            if (_aborted)
+            {
+                throw new IOException(_abortMessage);
+            }
         }
 
         private void CheckDisposed()
