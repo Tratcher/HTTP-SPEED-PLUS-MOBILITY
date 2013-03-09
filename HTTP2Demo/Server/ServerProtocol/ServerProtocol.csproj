@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Constants.cs" />
+    <Compile Include="StatusCode.cs" />
     <Compile Include="Http2ServerStream.cs" />
     <Compile Include="TransportInformation.cs" />
     <Compile Include="Http2ServerSession.cs" />

@@ -126,5 +126,14 @@ namespace SharedProtocol.IO
             _disposed = true;
             _readWaitingForData.TrySetResult(null);
         }
+
+        /// <summary>
+        /// Remove all outgoing frames with the given id. This stream has been reset.
+        /// </summary>
+        /// <param name="Id"></param>
+        public void PurgeStream(int id)
+        {
+            _messageQueue.PurgeStream(id);
+        }
     }
 }

@@ -50,6 +50,7 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Credentials\CredentialManager.cs" />
     <Compile Include="Credentials\CredentialSlot.cs" />
+    <Compile Include="Framing\StreamControlFrame.cs" />
     <Compile Include="IO\DuplexStream.cs" />
     <Compile Include="IO\InputStream.cs" />
     <Compile Include="IO\PriorityQueue.cs" />
@@ -62,7 +63,7 @@
     <Compile Include="Framing\FrameFlags.cs" />
     <Compile Include="Framing\FrameHelpers.cs" />
     <Compile Include="Framing\FrameReader.cs" />
-    <Compile Include="Framing\FrameType.cs" />
+    <Compile Include="Framing\ControlFrameType.cs" />
     <Compile Include="Framing\GoAwayFrame.cs" />
     <Compile Include="Framing\GoAwayStatusCode.cs" />
     <Compile Include="Framing\HeadersFrame.cs" />

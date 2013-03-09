@@ -63,7 +63,7 @@ namespace ServerProtocol
         public IDictionary<string, object> Environment { get { return _environment; } }
 
         // We've been offloaded onto a new thread. Decode the headers, invoke next, and do cleanup processing afterwards
-        internal async Task Run(AppFunc next)
+        public async Task Run(AppFunc next)
         {
             try
             {
@@ -73,11 +73,9 @@ namespace ServerProtocol
 
                 EndResponse();
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // TODO: Cleanup
-                // 500 response?
-                throw;
+                EndResponse(ex);
             }
         }
 
@@ -220,11 +218,11 @@ namespace ServerProtocol
 
         private void StartResponse()
         {
-            StartResponse(headersOnly: false);
+            StartResponse(null, headersOnly: false);
         }
 
         // First write, or stack unwind without writes
-        private bool StartResponse(bool headersOnly)
+        private bool StartResponse(Exception ex, bool headersOnly)
         {
             if (Interlocked.CompareExchange(ref _responseStarted, new object(), null) != null)
             {
@@ -232,7 +230,18 @@ namespace ServerProtocol
                 return false;
             }
 
-            // TODO: Fire OnSendingHeaders event
+            if (ex != null)
+            {
+                Contract.Assert(headersOnly);
+                _owinResponse.StatusCode = StatusCode.Code500InternalServerError;
+                _owinResponse.ReasonPhrase = StatusCode.Reason500InternalServerError;
+                _owinResponse.Headers.Clear();
+                // TODO: trigger the CancellationToken?
+            }
+            else
+            {
+                // TODO: Fire OnSendingHeaders event
+            }
 
             byte[] headerBytes = SerializeResponseHeaders();
             headerBytes = _compressor.Compress(headerBytes);
@@ -254,9 +263,10 @@ namespace ServerProtocol
         {
             IList<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>();
 
-            string statusCode = Get<int>("owin.ResponseStatusCode", 200).ToString(CultureInfo.InvariantCulture);
-            string reasonPhrase = Get<string>("owin.ResponseReasonPhrase", null);
-            string statusHeader = statusCode + (reasonPhrase != null ? " " + reasonPhrase : string.Empty);
+            int statusCode = Get<int>("owin.ResponseStatusCode", 200);
+            string statusCodeString = statusCode.ToString(CultureInfo.InvariantCulture);
+            string reasonPhrase = Get<string>("owin.ResponseReasonPhrase", StatusCode.GetReasonPhrase(statusCode));
+            string statusHeader = statusCodeString + (reasonPhrase != null ? " " + reasonPhrase : string.Empty);
             pairs.Add(new KeyValuePair<string, string>(":status", statusHeader));
 
             string version = Get<string>("owin.ResponseProtocol", "HTTP/1.1");
@@ -274,14 +284,31 @@ namespace ServerProtocol
 
         private void EndResponse()
         {
-            if (StartResponse(headersOnly: true))
+            EndResponse(null);
+        }
+
+        private void EndResponse(Exception ex)
+        {
+            if (StartResponse(ex, headersOnly: true))
             {
                 // Hadn't been started yet, FIN sent with headers.
-                return;
+                // Error code sent with headers, if any.
             }
+            else if (ex != null)
+            {
+                // TODO: trigger the CancellationToken?
+                _writeQueue.PurgeStream(Id);
+                RstStreamFrame reset = new RstStreamFrame(Id, ResetStatusCode.InternalError);
+                _writeQueue.WriteFrameAsync(reset, Priority.Control, CancellationToken.None);
+            }
+            else
+            {
+                // TODO: Send trailer headers (with fin)?
 
-            DataFrame terminator = new DataFrame(_id);
-            _writeQueue.WriteFrameAsync(terminator, _priority, CancellationToken.None);
+                DataFrame terminator = new DataFrame(_id);
+                _writeQueue.WriteFrameAsync(terminator, _priority, CancellationToken.None);
+            }
+            Dispose();
         }
 
         private T Get<T>(string key, T fallback = default(T))

@@ -2,7 +2,7 @@
 
 namespace SharedProtocol.Framing
 {
-    public class HeadersFrame : ControlFrame
+    public class HeadersFrame : StreamControlFrame
     {
         // The number of bytes in the frame, not including the compressed headers.
         private const int InitialFrameSize = 12;
@@ -15,27 +15,13 @@ namespace SharedProtocol.Framing
 
         // Outgoing
         public HeadersFrame(int streamId, byte[] compressedHeaders)
-            : base(new byte[InitialFrameSize + compressedHeaders.Length])
+            : base(new byte[InitialFrameSize + compressedHeaders.Length], streamId)
         {
             FrameType = ControlFrameType.Headers;
             FrameLength = InitialFrameSize - Constants.FramePreambleSize + compressedHeaders.Length;
-            StreamId = streamId;
 
             // Copy in the headers
             System.Buffer.BlockCopy(compressedHeaders, 0, Buffer, InitialFrameSize, compressedHeaders.Length);
-        }
-
-        // 31 bits, 65-95
-        public int StreamId
-        {
-            get
-            {
-                return FrameHelpers.Get31BitsAt(Buffer, 8);
-            }
-            set
-            {
-                FrameHelpers.Set31BitsAt(Buffer, 8, value);
-            }
         }
 
         public ArraySegment<byte> CompressedHeaders

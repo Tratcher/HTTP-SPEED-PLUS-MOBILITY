@@ -3,18 +3,17 @@ using System.Diagnostics.Contracts;
 
 namespace SharedProtocol.Framing
 {
-    public class SynStreamFrame : ControlFrame
+    public class SynStreamFrame : StreamControlFrame
     {
         // The number of bytes in the frame, not including the compressed headers.
         private const int InitialFrameSize = 18;
 
         // Create an outgoing frame
         public SynStreamFrame(int streamId, byte[] headerBytes)
-            : base(new byte[InitialFrameSize + headerBytes.Length])
+            : base(new byte[InitialFrameSize + headerBytes.Length], streamId)
         {
             FrameType = ControlFrameType.SynStream;
             FrameLength = Buffer.Length - Constants.FramePreambleSize;
-            StreamId = streamId;
 
             // Copy in the headers
             System.Buffer.BlockCopy(headerBytes, 0, Buffer, InitialFrameSize, headerBytes.Length);
@@ -24,19 +23,6 @@ namespace SharedProtocol.Framing
         public SynStreamFrame(Frame preamble)
             : base(preamble)
         {
-        }
-
-        // 31 bits, 65-95
-        public int StreamId
-        {
-            get
-            {
-                return FrameHelpers.Get31BitsAt(Buffer, 8);
-            }
-            set
-            {
-                FrameHelpers.Set31BitsAt(Buffer, 8, value);
-            }
         }
 
         public int AssociatedStreamId

@@ -86,14 +86,14 @@ namespace SharedProtocol
             {
                 _compressor.Dispose();
 
-                if (_writeQueue != null)
-                {
-                    _writeQueue.Dispose();
-                }
-
                 if (_incomingStream != null)
                 {
                     _incomingStream.Dispose();
+                }
+
+                if (_outputStream != null)
+                {
+                    _outputStream.Dispose();
                 }
             }
         }

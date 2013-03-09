@@ -231,5 +231,42 @@ namespace SharedProtocol.Framing
             }
             return headers;
         }
+
+        /// <summary>
+        /// Returns the StreamId from the given frame, or -1 if this frame type does not have one.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public static int GetStreamId(Frame frame)
+        {
+            if (frame.IsControl)
+            {
+                ControlFrame controlFrame = (ControlFrame)frame;
+                switch (controlFrame.FrameType)
+                {
+                    case ControlFrameType.Headers:
+                    case ControlFrameType.RstStream:
+                    case ControlFrameType.SynReply:
+                    case ControlFrameType.SynStream:
+                    case ControlFrameType.WindowUpdate:
+                        StreamControlFrame streamFrame = (StreamControlFrame)controlFrame;
+                        return streamFrame.StreamId;
+
+                    case ControlFrameType.Credential:
+                    case ControlFrameType.GoAway:
+                    case ControlFrameType.Settings:
+                    case ControlFrameType.Ping:
+                        return -1;
+
+                    default:
+                        throw new NotImplementedException(controlFrame.FrameType.ToString());
+                }
+            }
+            else
+            {
+                DataFrame dataFrame = (DataFrame)frame;
+                return dataFrame.StreamId;
+            }
+        }
     }
 }

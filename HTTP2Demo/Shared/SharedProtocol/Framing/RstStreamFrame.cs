@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SharedProtocol.Framing
 {
-    public class RstStreamFrame : ControlFrame
+    public class RstStreamFrame : StreamControlFrame
     {
         // The number of bytes in the frame.
         private const int InitialFrameSize = 16;
@@ -19,25 +19,11 @@ namespace SharedProtocol.Framing
 
         // Outgoing
         public RstStreamFrame(int id, ResetStatusCode statusCode)
-            : base(new byte[InitialFrameSize])
+            : base(new byte[InitialFrameSize], id)
         {
             FrameType = ControlFrameType.RstStream;
             FrameLength = InitialFrameSize - Constants.FramePreambleSize; // 8
-            StreamId = id;
             StatusCode = statusCode;
-        }
-
-        // 31 bits, 65-95
-        public int StreamId
-        {
-            get
-            {
-                return FrameHelpers.Get31BitsAt(Buffer, 8);
-            }
-            set
-            {
-                FrameHelpers.Set31BitsAt(Buffer, 8, value);
-            }
         }
 
         // 32 bits

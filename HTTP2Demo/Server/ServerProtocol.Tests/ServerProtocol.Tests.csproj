@@ -32,6 +32,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Owin.Types, Version=0.8.5.0, Culture=neutral, PublicKeyToken=f0ebd12fd5e55cc5, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\Owin.Types.0.8.5\lib\net40\Owin.Types.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -45,11 +49,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="StreamExceptionTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Shared\SharedProtocol\SharedProtocol.csproj">
+      <Project>{e34ac310-324c-46bc-af9f-1a41df58e867}</Project>
+      <Name>SharedProtocol</Name>
+    </ProjectReference>
     <ProjectReference Include="..\ServerProtocol\ServerProtocol.csproj">
       <Project>{d7d6c1eb-016e-491f-806a-5bfec806179d}</Project>
       <Name>ServerProtocol</Name>

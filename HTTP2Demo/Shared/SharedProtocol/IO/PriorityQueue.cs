@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SharedProtocol.Framing;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,6 +64,25 @@ namespace SharedProtocol.IO
             get
             {
                 return _queue.Count > 0;
+            }
+        }
+
+        public void PurgeStream(int id)
+        {
+            lock (_queueLock)
+            {
+                LinkedListNode<PriorityQueueEntry> here = _queue.First;
+                LinkedListNode<PriorityQueueEntry> next;
+                while (here != null)
+                {
+                    next = here.Next;
+                    if (!here.Value.IsFlush && FrameHelpers.GetStreamId(here.Value.Frame) == id)
+                    {
+                        _queue.Remove(here);
+                    }
+
+                    here = next;
+                }
             }
         }
     }
