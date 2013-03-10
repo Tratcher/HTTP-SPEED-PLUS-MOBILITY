@@ -38,7 +38,6 @@ namespace ProtocolIntegration.Tests
         [Fact]
         public Task ApplicationExceptionAfterHeaders_StreamResetIOException()
         {
-            ManualResetEvent waitForRead = new ManualResetEvent(false);
             return RunSessionAsync(
                 (AppFunc)(env => 
                 {
@@ -60,6 +59,86 @@ namespace ProtocolIntegration.Tests
                     Assert.Throws<IOException>(() => clientProtocolStream.ResponseStream.Read(new byte[20], 0, 20));
                     Assert.Throws<AggregateException>(() => clientProtocolStream.ResponseStream.ReadAsync(new byte[20], 0, 20).Result);
                 });
+        }
+
+        [Fact]
+        public Task ClientCancellationBeforeResponseHeadersReceived_ResetSent()
+        {
+            ManualResetEvent waitForRequest = new ManualResetEvent(false);
+            ManualResetEvent waitForClientCancel = new ManualResetEvent(false);
+            ManualResetEvent waitForServerCancel = new ManualResetEvent(false);
+            bool serverCancelled = false;
+            return RunSessionAsync(
+                (AppFunc)(env =>
+                {
+                    TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
+                    CancellationToken token = (CancellationToken)env["owin.CallCancelled"];
+                    token.Register(() =>
+                        {
+                            serverCancelled = true;
+                            waitForServerCancel.Set();
+                            tcs.TrySetCanceled();
+                        });
+                    waitForRequest.Set();
+                    return tcs.Task;
+                }),
+                async (clientSession, serverSession) =>
+                {
+                    CancellationTokenSource clientCancel = new CancellationTokenSource();
+                    IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("GET");
+                    Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, 3, false, clientCancel.Token);
+                    Task<IList<KeyValuePair<string, string>>> responseTask = clientProtocolStream.GetResponseAsync();
+                    waitForRequest.WaitOne();
+                    clientCancel.Cancel();
+                    Assert.True(responseTask.IsCanceled);
+                    waitForClientCancel.Set();
+                    waitForServerCancel.WaitOne();
+                    Assert.True(serverCancelled);
+                });
+        }
+
+        [Fact]
+        public async Task ConnectionReset_StreamsAborted()
+        {
+            DuplexStream clientStream = new DuplexStream();
+            DuplexStream serverStream = clientStream.GetOpositeStream();
+            ManualResetEvent waitForRequest = new ManualResetEvent(false);
+            bool serverCancelled = false;
+
+            AppFunc app = environment =>
+                {
+                    OwinResponse response = new OwinResponse(environment);
+                    TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
+                    response.CallCancelled.Register(() =>
+                    {
+                        serverCancelled = true;
+                        tcs.TrySetCanceled();
+                    });
+                    waitForRequest.Set();
+                    return tcs.Task;
+                };
+
+            Task clientTask, serverTask;
+            using (Http2ClientSession clientSession = new Http2ClientSession(clientStream, false, CancellationToken.None, CancellationToken.None))
+            {
+                using (Http2ServerSession serverSession = new Http2ServerSession(app, CreateTransportInfo()))
+                {
+                    clientTask = clientSession.Start();
+                    serverTask = serverSession.Start(serverStream, CancellationToken.None);
+
+                    IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("GET");
+                    Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, 3, false, CancellationToken.None);
+                    Task<IList<KeyValuePair<string, string>>> responseTask = clientProtocolStream.GetResponseAsync();
+                    waitForRequest.WaitOne();
+
+                    clientStream.Abort();
+
+                    Assert.Throws<AggregateException>(() => responseTask.Result);
+                    Assert.Throws<AggregateException>(() => clientTask.Wait(1000));
+                    Assert.True(serverTask.Wait(1000));
+                    Assert.True(serverCancelled);
+                }
+            }
         }
 
         private static IList<KeyValuePair<string, string>> GenerateHeaders(string method)

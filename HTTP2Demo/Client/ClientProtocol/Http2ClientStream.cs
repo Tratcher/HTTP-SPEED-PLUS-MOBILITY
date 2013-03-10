@@ -15,6 +15,7 @@ namespace ClientProtocol
     public class Http2ClientStream : Http2BaseStream
     {
         private TaskCompletionSource<SynReplyFrame> _responseTask;
+        private CancellationTokenRegistration _cancellation;
 
         public Http2ClientStream(int id, Priority priority, WriteQueue writeQueue, CancellationToken cancel)
             : base(id, writeQueue, cancel)
@@ -22,6 +23,7 @@ namespace ClientProtocol
             _priority = priority;
             _responseTask = new TaskCompletionSource<SynReplyFrame>();
             _outputStream = new OutputStream(id, _priority, writeQueue);
+            _cancellation = _cancel.Register(Cancel, this);
         }
 
         public Stream RequestStream
@@ -61,17 +63,20 @@ namespace ClientProtocol
 
         public void SetReply(SynReplyFrame frame)
         {
-            Contract.Assert(!_responseTask.Task.IsCompleted);
-            if (frame.IsFin)
+            // May have been cancelled already
+            if (!_responseTask.Task.IsCompleted)
             {
-                _incomingStream = Stream.Null;
+                if (frame.IsFin)
+                {
+                    _incomingStream = Stream.Null;
+                }
+                else
+                {
+                    _incomingStream = new InputStream(Constants.DefaultFlowControlCredit, SendWindowUpdate); // TODO: Needs to handle flow control, send window updates.
+                }
+                // Dispatch, as TrySetResult will synchronously execute the waiters callback and block our message pump.
+                Task.Run(() => _responseTask.TrySetResult(frame));
             }
-            else
-            {
-                _incomingStream = new InputStream(Constants.DefaultFlowControlCredit, SendWindowUpdate); // TODO: Needs to handle flow control, send window updates.
-            }
-            // Dispatch, as TrySetResult will synchronously execute the waiters callback and block our message pump.
-            Task.Run(() => _responseTask.TrySetResult(frame));
         }
 
         public async Task<IList<KeyValuePair<string, string>>> GetResponseAsync()
@@ -91,10 +96,24 @@ namespace ClientProtocol
             _writeQueue.WriteFrameAsync(terminator, _priority, _cancel);
         }
 
+        private static void Cancel(object obj)
+        {
+            Http2ClientStream clientStream = (Http2ClientStream)obj;
+            if (!clientStream._disposed)
+            {
+                // Abort locally
+                clientStream.Reset(ResetStatusCode.Cancel);
+                // TODO: Only send the reset if we have not both sent and received a fin
+                RstStreamFrame reset = new RstStreamFrame(clientStream.Id, ResetStatusCode.Cancel);
+                clientStream._writeQueue.WriteFrameAsync(reset, Priority.Control, CancellationToken.None);
+            }
+        }
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
+                _cancellation.Dispose();
                 _responseTask.TrySetCanceled();
                 _outputStream.Dispose();
             }

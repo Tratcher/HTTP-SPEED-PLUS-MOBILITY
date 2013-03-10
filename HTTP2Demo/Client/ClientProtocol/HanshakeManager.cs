@@ -41,10 +41,10 @@ namespace ClientProtocol
             await stream.WriteAsync(requestBytes, 0, requestBytes.Length, cancel);
 
             // Read response headers
-            return await Read11ResponseHeadersAsync(stream);
+            return await Read11ResponseHeadersAsync(stream, cancel);
         }
 
-        private static async Task<HandshakeResponse> Read11ResponseHeadersAsync(Stream stream)
+        private static async Task<HandshakeResponse> Read11ResponseHeadersAsync(Stream stream, CancellationToken cancel)
         {
             byte[] buffer = new byte[HandshakeResponseSizeLimit];
             int lastInspectionOffset = 0;
@@ -54,7 +54,10 @@ namespace ClientProtocol
             {
                 try
                 {
-                    read = await stream.ReadAsync(buffer, readOffset, buffer.Length - readOffset);
+                    using (CancellationTokenRegistration cancellation = cancel.Register(() => stream.Dispose()))
+                    {
+                        read = await stream.ReadAsync(buffer, readOffset, buffer.Length - readOffset, cancel);
+                    }
                 }
                 catch (IOException)
                 {

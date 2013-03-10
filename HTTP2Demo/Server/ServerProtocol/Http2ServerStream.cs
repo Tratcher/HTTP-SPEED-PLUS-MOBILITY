@@ -26,17 +26,21 @@ namespace ServerProtocol
 
         private SynStreamFrame _synFrame;
         private IDictionary<string, object> _upgradeEnvironment;
+
+        private CancellationTokenSource _streamCancel;
         
-        private Http2ServerStream(int id, TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
-            : base(id, writeQueue, cancel)
+        private Http2ServerStream(int id, TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken sessionCancel)
+            : base(id, writeQueue, sessionCancel)
         {
+            _streamCancel = CancellationTokenSource.CreateLinkedTokenSource(sessionCancel);
+            _cancel = _streamCancel.Token;
             _transportInfo = transportInfo;
         }
 
         // For use with HTTP/1.1 upgrade handshakes
         public Http2ServerStream(int id, TransportInformation transportInfo, IDictionary<string, object> upgradeEnvironment,
-            WriteQueue writeQueue, CancellationToken cancel)
-            : this(id, transportInfo, writeQueue, cancel)
+            WriteQueue writeQueue, CancellationToken sessionCancel)
+            : this(id, transportInfo, writeQueue, sessionCancel)
         {
             Contract.Assert(id == 1, "This constructor is only used for the initial HTTP/1.1 handshake request.");
             _upgradeEnvironment = upgradeEnvironment;
@@ -313,8 +317,22 @@ namespace ServerProtocol
 
         public override void Reset(ResetStatusCode statusCode)
         {
-            // TODO: Trigger the cancellation token in a Task.Run so we don't block the message pump.
-            base.Reset(statusCode);
+            Task.Run(() =>
+            {
+                // Trigger the cancellation token in a Task.Run so we don't block the message pump.
+                try
+                {
+                    _streamCancel.Cancel(false);
+                }
+                catch (AggregateException)
+                {
+                    // TODO: Log
+                }
+                catch (ObjectDisposedException)
+                {
+                }
+                base.Reset(statusCode);
+            });
         }
 
         private T Get<T>(string key, T fallback = default(T))
@@ -326,6 +344,12 @@ namespace ServerProtocol
                 return (T)obj;
             }
             return fallback;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            _streamCancel.Dispose();
+            base.Dispose(disposing);
         }
     }
 }

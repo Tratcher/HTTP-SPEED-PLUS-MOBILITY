@@ -152,5 +152,28 @@ namespace SharedProtocol.IO
             _outgoing.Dispose();
             base.Dispose(disposing);
         }
+
+        public void Abort()
+        {
+            QueueStream incoming = _incoming as QueueStream;
+            if (incoming == null)
+            {
+                _incoming.Dispose();
+            }
+            else
+            {
+                incoming.Abort(new IOException().Message);
+            }
+
+            QueueStream outgoing = _outgoing as QueueStream;
+            if (outgoing == null)
+            {
+                _outgoing.Dispose();
+            }
+            else
+            {
+                outgoing.Abort(new IOException().Message);
+            }
+        }
     }
 }

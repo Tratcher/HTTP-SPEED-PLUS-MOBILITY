@@ -1,11 +1,5 @@
 Body compression/decompression
 
-Cancel/Abort:
-- Connection disconnect - Reset/Abort all streams
-- Receive a stream reset - Abort request, purge write queue
-- Client side request cancellation - send reset, purge write queue
-- Server side request cancellation (exception during executing) - send reset, purge write queue
-
 GoAway
 
 Additional Headers frames (Trailers)

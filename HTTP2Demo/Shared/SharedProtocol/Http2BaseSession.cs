@@ -64,6 +64,7 @@ namespace SharedProtocol
                 if (frame == null)
                 {
                     // Stream closed
+                    Dispose();
                     break;
                 }
 
@@ -180,7 +181,7 @@ namespace SharedProtocol
             // TODO: Dispose of all streams
             foreach (T stream in _activeStreams.Values)
             {
-                stream.Dispose();
+                stream.Reset(ResetStatusCode.Cancel);
             }
 
             // Just disposing of the stream should stop the FrameReader and the WriteQueue
