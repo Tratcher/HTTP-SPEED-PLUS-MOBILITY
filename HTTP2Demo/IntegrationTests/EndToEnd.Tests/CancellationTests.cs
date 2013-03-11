@@ -133,6 +133,7 @@ namespace EndToEnd.Tests
         {
             OwinResponse response = new OwinResponse(environment);
             await response.WriteAsync("Hello World");
+            await Task.Delay(500); // Make sure the headers get received.
             throw new NotImplementedException();
         }
 
