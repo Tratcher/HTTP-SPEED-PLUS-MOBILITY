@@ -96,6 +96,11 @@ namespace SharedProtocol
                         stream = GetStream(resetFrame.StreamId);
                         stream.Reset(resetFrame.StatusCode);
                         break;
+                    case ControlFrameType.Headers:
+                        HeadersFrame headersFrame = (HeadersFrame)frame;
+                        stream = GetStream(headersFrame.StreamId);
+                        stream.ReceiveExtraHeaders(headersFrame);
+                        break;
                     default:
                         throw new NotImplementedException(frame.FrameType.ToString());
                 }
@@ -178,10 +183,11 @@ namespace SharedProtocol
                 currentPing.Cancel();
             }
 
-            // TODO: Dispose of all streams
+            // Dispose of all streams
             foreach (T stream in _activeStreams.Values)
             {
                 stream.Reset(ResetStatusCode.Cancel);
+                stream.Dispose();
             }
 
             // Just disposing of the stream should stop the FrameReader and the WriteQueue

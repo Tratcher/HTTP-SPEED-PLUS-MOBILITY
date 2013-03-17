@@ -55,7 +55,8 @@ namespace ServerProtocol
             _synFrame = synFrame;
             if (synFrame.IsFin)
             {
-                // TODO: Set stream state to request body complete and RST the stream if additional frames arrive.
+                // Set stream state to request body complete and RST the stream if additional frames arrive.
+                FinReceived = true;
                 _incomingStream = Stream.Null;
             }
             else
@@ -65,6 +66,18 @@ namespace ServerProtocol
         }
 
         public IDictionary<string, object> Environment { get { return _environment; } }
+
+        private bool RequestHeadersReceived
+        {
+            get { return (_state & StreamState.RequestHeaders) == StreamState.RequestHeaders; }
+            set { Contract.Assert(value); _state |= StreamState.RequestHeaders; }
+        }
+
+        private bool ResponseHeadersSent
+        {
+            get { return (_state & StreamState.ResponseHeaders) == StreamState.ResponseHeaders; }
+            set { Contract.Assert(value); _state |= StreamState.ResponseHeaders; }
+        }
 
         // We've been offloaded onto a new thread. Decode the headers, invoke next, and do cleanup processing afterwards
         public async Task Run(AppFunc next)
@@ -85,6 +98,8 @@ namespace ServerProtocol
 
         private void PopulateEnvironment()
         {
+            RequestHeadersReceived = true;
+
             _environment = new Dictionary<string, object>();
             _owinRequest = new OwinRequest(_environment);
             _owinResponse = new OwinResponse(_environment);
@@ -220,6 +235,11 @@ namespace ServerProtocol
             // throw new NotImplementedException();
         }
 
+        public override void EnsureStarted()
+        {
+            StartResponse();
+        }
+
         private void StartResponse()
         {
             StartResponse(null, headersOnly: false);
@@ -240,6 +260,7 @@ namespace ServerProtocol
                 _owinResponse.StatusCode = StatusCode.Code500InternalServerError;
                 _owinResponse.ReasonPhrase = StatusCode.Reason500InternalServerError;
                 _owinResponse.Headers.Clear();
+                // TODO: Should this be a RST_STREAM InternalError instead?
                 // TODO: trigger the CancellationToken?
             }
             else
@@ -255,7 +276,9 @@ namespace ServerProtocol
             if (headersOnly)
             {
                 synFrame.IsFin = true;
+                FinSent = true;
             }
+            ResponseHeadersSent = true;
 
             // SynReplyFrames go in the control queue so they get sequenced properly with GoAway frames.
             _writeQueue.WriteFrameAsync(synFrame, Priority.Control, CancellationToken.None);
@@ -302,15 +325,22 @@ namespace ServerProtocol
             {
                 // TODO: trigger the CancellationToken?
                 _writeQueue.PurgeStream(Id);
-                RstStreamFrame reset = new RstStreamFrame(Id, ResetStatusCode.InternalError);
-                _writeQueue.WriteFrameAsync(reset, Priority.Control, CancellationToken.None);
+                if (!ResetSent)
+                {
+                    RstStreamFrame reset = new RstStreamFrame(Id, ResetStatusCode.InternalError);
+                    ResetSent = true;
+                    _writeQueue.WriteFrameAsync(reset, Priority.Control, CancellationToken.None);
+                }
             }
             else
             {
-                // TODO: Send trailer headers (with fin)?
-
-                DataFrame terminator = new DataFrame(_id);
-                _writeQueue.WriteFrameAsync(terminator, _priority, CancellationToken.None);
+                // Fin may have been sent with a n extra headers frame.
+                if (!FinSent && !ResetSent)
+                {
+                    DataFrame terminator = new DataFrame(_id);
+                    FinSent = true;
+                    _writeQueue.WriteFrameAsync(terminator, _priority, CancellationToken.None);
+                }
             }
             Dispose();
         }
@@ -348,6 +378,15 @@ namespace ServerProtocol
 
         protected override void Dispose(bool disposing)
         {
+            if (!FinReceived && !ResetReceived && !ResetSent)
+            {
+                // The request body hasn't finished yet, and nobody is going to read it. Send a reset.
+                // Note this may be put in the output queue after a successful response and FIN.
+                ResetSent = true;
+                RstStreamFrame reset = new RstStreamFrame(Id, ResetStatusCode.Cancel);
+                _writeQueue.WriteFrameAsync(reset, _priority, CancellationToken.None);
+            }
+
             _streamCancel.Dispose();
             base.Dispose(disposing);
         }

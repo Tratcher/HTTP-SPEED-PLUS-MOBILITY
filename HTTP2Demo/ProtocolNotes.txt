@@ -28,7 +28,16 @@ Data frames:
 
 Headers:
 - Compression - Why is compression mandatory? I want to turn it off for debugging.
+-- Maintaining an active compression context per request is consuming tons of memory (260kb/req, when a normal request should only take 10's of kb/req).
 - Encoding - Please declare an official header value encoding. Every header currently does something different. e.g. UTF-8 or punycode host header. Mime encoding, quoted printable, base64, etc..
+- Should the Trailers header be used to indicate what headers will be sent later? Just like 1.1 chunking trailers.
+
+Content-Length:
+- The client and server side content-length enforcement is contradictory:
+-- "If a server receives a request where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the server MUST return a 400 (Bad Request) error."
+-- "If a client receives a response where the sum of the data frame payload lengths does not equal the size of the Content-Length header, the client MUST ignore the content length header."
+-- This should be an error state indicated via a RST_STREAM.  A 400 Bad Request does not actually tell the client to stop sending the body.  Most won't look at the response until the request is finished uploading.
+-- On the client side it's bad to say that the content-length is advisory and ignorable because this value is frequently used to make up front decisions around buffering, response size policy limits, etc.. E.g. it would be very bad if the server said it was sending 1gb, but then was allowed to send 10gb.  If I had known it was going to send 10gb, I'd have reset the stream immidately.  If the server doesn't know the actuall length, it's better not to guess.
 
 Push:
 - Over-optimized for browsers, negatively impacts crawlers.

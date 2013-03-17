@@ -139,6 +139,7 @@ namespace SharedProtocol.IO
                 {
                     // await a backpressure task until we get a window update.
                     await WaitForFlowCreditAsync(cancellationToken);
+                    CheckDisposed();
                 }
 
                 int subCount = Math.Min(Math.Min(_flowControlCredit, count - written), Constants.MaxDataFrameContentSize);

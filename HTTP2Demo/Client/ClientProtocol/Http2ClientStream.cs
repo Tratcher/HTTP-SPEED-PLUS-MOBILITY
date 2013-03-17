@@ -44,6 +44,26 @@ namespace ClientProtocol
             }
         }
 
+        private bool RequestHeadersSent
+        {
+            get { return (_state & StreamState.RequestHeaders) == StreamState.RequestHeaders; }
+            set { Contract.Assert(value); _state |= StreamState.RequestHeaders; }
+        }
+
+        private bool ResponseHeadersReceived
+        {
+            get { return (_state & StreamState.ResponseHeaders) == StreamState.ResponseHeaders; }
+            set { Contract.Assert(value); _state |= StreamState.ResponseHeaders; }
+        }
+
+        public override void EnsureStarted()
+        {
+            if (!RequestHeadersSent)
+            {
+                throw new InvalidOperationException("Request not set yet.");
+            }
+        }
+
         public void StartRequest(IList<KeyValuePair<string, string>> pairs, int certIndex, bool hasRequestBody)
         {
             // Serialize the request as a SynStreamFrame and submit it. (FIN if there is no body)
@@ -52,9 +72,14 @@ namespace ClientProtocol
             SynStreamFrame frame = new SynStreamFrame(_id, headerBytes);
             frame.CertClot = certIndex;
             frame.Priority = _priority;
-            frame.IsFin = !hasRequestBody;
 
-            // TODO: Set stream state
+            // Set stream state
+            if (!hasRequestBody)
+            {
+                frame.IsFin = true;
+                FinSent = true;
+            }
+            RequestHeadersSent = true;
 
             // Note that SynStreamFrames have to be sent in sequential ID order, so they're 
             // put into the control priority queue.
@@ -66,8 +91,10 @@ namespace ClientProtocol
             // May have been cancelled already
             if (!_responseTask.Task.IsCompleted)
             {
+                ResponseHeadersReceived = true;
                 if (frame.IsFin)
                 {
+                    FinReceived = true;
                     _incomingStream = Stream.Null;
                 }
                 else
@@ -93,19 +120,26 @@ namespace ClientProtocol
         public void EndRequest()
         {
             DataFrame terminator = new DataFrame(_id);
+            FinSent = true;
             _writeQueue.WriteFrameAsync(terminator, _priority, _cancel);
         }
 
         private static void Cancel(object obj)
         {
             Http2ClientStream clientStream = (Http2ClientStream)obj;
-            if (!clientStream._disposed)
+            if (!clientStream.Disposed)
             {
                 // Abort locally
                 clientStream.Reset(ResetStatusCode.Cancel);
-                // TODO: Only send the reset if we have not both sent and received a fin
-                RstStreamFrame reset = new RstStreamFrame(clientStream.Id, ResetStatusCode.Cancel);
-                clientStream._writeQueue.WriteFrameAsync(reset, Priority.Control, CancellationToken.None);
+                // Note we send the reset even if we've sent and received a FIN because when the write queue got flushed,
+                // we're not sure if our fin actually got sent.
+                if (!clientStream.ResetSent)
+                {
+                    RstStreamFrame reset = new RstStreamFrame(clientStream.Id, ResetStatusCode.Cancel);
+                    clientStream.ResetSent = true;
+                    clientStream._writeQueue.WriteFrameAsync(reset, Priority.Control, CancellationToken.None);
+                }
+                clientStream.Dispose();
             }
         }
 

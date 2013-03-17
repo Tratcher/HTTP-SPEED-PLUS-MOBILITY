@@ -2,7 +2,9 @@ Body compression/decompression
 
 GoAway
 
-Additional Headers frames (Trailers)
+Additional Headers frames (like Trailers, but can be sent at any time.)
+HTTP/1.1 chunked trailers: common.Trailers = IDictionary<string, string[]>; Sent with the chunked terminator at the end of the request.
+HTTP/2.0 extra headers: http2.SendExtraHeaders = Func<IDictionary<string, string[]>, bool /* fin */, Task>;
 
 Credential (client certs)
 

@@ -86,6 +86,7 @@
     <Compile Include="IO\QueueStream.cs" />
     <Compile Include="IO\OutputStream.cs" />
     <Compile Include="IO\WriteQueue.cs" />
+    <Compile Include="StreamState.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
