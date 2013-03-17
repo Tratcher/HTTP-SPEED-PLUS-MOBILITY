@@ -102,6 +102,18 @@ namespace ServerProtocol
                         bool success = _credentialManager.TrySetCredential(credentialFrame.Slot, slot);
                         // TODO: if (!success) ???
                         break;
+
+                    case ControlFrameType.RstStream:
+                        RstStreamFrame resetFrame = (RstStreamFrame)frame;
+                        stream = GetStream(resetFrame.StreamId);
+                        stream.Reset(resetFrame.StatusCode);
+                        Task.Run(() =>
+                        {
+                            // Trigger the cancellation token in a Task.Run so we don't block the message pump.
+                            stream.Reset(resetFrame.StatusCode);
+                        });
+                        break;
+
                     default:
                         base.DispatchIncomingFrame(frame);
                         break;

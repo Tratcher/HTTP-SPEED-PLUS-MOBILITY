@@ -91,11 +91,6 @@ namespace SharedProtocol
                         stream = GetStream(windowFrame.StreamId);
                         stream.UpdateWindowSize(windowFrame.Delta);
                         break;
-                    case ControlFrameType.RstStream:
-                        RstStreamFrame resetFrame = (RstStreamFrame)frame;
-                        stream = GetStream(resetFrame.StreamId);
-                        stream.Reset(resetFrame.StatusCode);
-                        break;
                     case ControlFrameType.Headers:
                         HeadersFrame headersFrame = (HeadersFrame)frame;
                         stream = GetStream(headersFrame.StreamId);

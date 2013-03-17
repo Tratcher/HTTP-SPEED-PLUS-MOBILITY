@@ -50,6 +50,11 @@ namespace ClientProtocol
                         stream = GetStream(synReply.StreamId);
                         stream.SetReply(synReply);
                         break;
+                    case ControlFrameType.RstStream:
+                        RstStreamFrame resetFrame = (RstStreamFrame)frame;
+                        stream = GetStream(resetFrame.StreamId);
+                        stream.Reset(resetFrame.StatusCode);
+                        break;
 
                     default:
                         base.DispatchIncomingFrame(frame);

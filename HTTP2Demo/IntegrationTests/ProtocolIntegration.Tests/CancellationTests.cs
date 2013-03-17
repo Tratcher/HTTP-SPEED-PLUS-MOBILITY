@@ -98,12 +98,12 @@ namespace ProtocolIntegration.Tests
         }
 
         [Fact]
-        public async Task ConnectionReset_StreamsAborted()
+        public void ConnectionReset_StreamsAborted()
         {
             DuplexStream clientStream = new DuplexStream();
             DuplexStream serverStream = clientStream.GetOpositeStream();
             ManualResetEvent waitForRequest = new ManualResetEvent(false);
-            bool serverCancelled = false;
+            ManualResetEvent waitForCancel = new ManualResetEvent(false);
 
             AppFunc app = environment =>
                 {
@@ -111,7 +111,7 @@ namespace ProtocolIntegration.Tests
                     TaskCompletionSource<object> tcs = new TaskCompletionSource<object>();
                     response.CallCancelled.Register(() =>
                     {
-                        serverCancelled = true;
+                        waitForCancel.Set();
                         tcs.TrySetCanceled();
                     });
                     waitForRequest.Set();
@@ -136,7 +136,7 @@ namespace ProtocolIntegration.Tests
                     Assert.Throws<AggregateException>(() => responseTask.Result);
                     Assert.Throws<AggregateException>(() => clientTask.Wait(1000));
                     Assert.True(serverTask.Wait(1000));
-                    Assert.True(serverCancelled);
+                    Assert.True(waitForCancel.WaitOne(1000));
                 }
             }
         }

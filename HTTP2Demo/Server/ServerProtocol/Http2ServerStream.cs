@@ -347,22 +347,18 @@ namespace ServerProtocol
 
         public override void Reset(ResetStatusCode statusCode)
         {
-            Task.Run(() =>
+            try
             {
-                // Trigger the cancellation token in a Task.Run so we don't block the message pump.
-                try
-                {
-                    _streamCancel.Cancel(false);
-                }
-                catch (AggregateException)
-                {
-                    // TODO: Log
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-                base.Reset(statusCode);
-            });
+                _streamCancel.Cancel(false);
+            }
+            catch (AggregateException)
+            {
+                // TODO: Log
+            }
+            catch (ObjectDisposedException)
+            {
+            }
+            base.Reset(statusCode);
         }
 
         private T Get<T>(string key, T fallback = default(T))
