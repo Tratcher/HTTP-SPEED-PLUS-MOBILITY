@@ -26,10 +26,12 @@ namespace SharedProtocol.IO
             {
                 // Scan backwards, so we end up in order behind other items of the same priority.
                 LinkedListNode<PriorityQueueEntry> current = _queue.Last;
+                /* Disabled until it can be refactored. Header frames must never be re-ordered due to compression.
                 while (current != null && current.Value.Priority > entry.Priority)
                 {
                     current = current.Previous;
                 }
+                */
 
                 if (current == null)
                 {

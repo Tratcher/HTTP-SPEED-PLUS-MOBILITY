@@ -50,7 +50,7 @@ namespace SharedProtocol.IO.Tests
             Assert.False(queue.IsDataAvailable);
         }
 
-        [Fact]
+        [Fact(Skip = "Prioritization has been disabled, it breaks header decompression.")]
         public void EnqueueAndDequeueOutOfOrder()
         {
             PriorityQueue queue = new PriorityQueue();
@@ -78,7 +78,7 @@ namespace SharedProtocol.IO.Tests
             Assert.False(queue.IsDataAvailable);
         }
 
-        [Fact]
+        [Fact(Skip = "Prioritization has been disabled, it breaks header decompression.")]
         public void EnqueueAndDequeueReverseOrder()
         {
             PriorityQueue queue = new PriorityQueue();
@@ -137,7 +137,7 @@ namespace SharedProtocol.IO.Tests
             Assert.False(queue.IsDataAvailable);
         }
 
-        [Fact]
+        [Fact(Skip="Prioritization has been disabled, it breaks header decompression.")]
         public void EnqueueAndDequeueEqualAndNotEqualPriority()
         {
             PriorityQueue queue = new PriorityQueue();
