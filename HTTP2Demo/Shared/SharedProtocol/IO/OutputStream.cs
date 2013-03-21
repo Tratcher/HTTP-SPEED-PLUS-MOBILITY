@@ -66,14 +66,14 @@ namespace SharedProtocol.IO
         public override void Flush()
         {
             _onStart();
-            _writeQueue.FlushAsync(_priority, CancellationToken.None).Wait();
+            _writeQueue.FlushAsync(_priority).Wait();
         }
 
         public override Task FlushAsync(CancellationToken cancellationToken)
         {
             _onStart();
             // TODO: await a backpressure task until we get a window update.
-            return _writeQueue.FlushAsync(_priority, cancellationToken);
+            return _writeQueue.FlushAsync(_priority);
         }
 
         public override long Seek(long offset, SeekOrigin origin)
@@ -130,6 +130,7 @@ namespace SharedProtocol.IO
         public async override Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
         {
             CheckDisposed();
+            cancellationToken.ThrowIfCancellationRequested();
             // TODO: Compression?
             _onStart();
             int written = 0;
@@ -140,6 +141,7 @@ namespace SharedProtocol.IO
                     // await a backpressure task until we get a window update.
                     await WaitForFlowCreditAsync(cancellationToken);
                     CheckDisposed();
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
 
                 int subCount = Math.Min(Math.Min(_flowControlCredit, count - written), Constants.MaxDataFrameContentSize);
@@ -149,7 +151,7 @@ namespace SharedProtocol.IO
                 offset += subCount;
                 _flowControlCredit -= subCount;
 
-                await _writeQueue.WriteFrameAsync(dataFrame, _priority, cancellationToken);
+                await _writeQueue.WriteFrameAsync(dataFrame, _priority);
             }
             while (written < count);
         }

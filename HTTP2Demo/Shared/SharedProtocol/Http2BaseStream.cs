@@ -129,7 +129,7 @@ namespace SharedProtocol
         protected void SendWindowUpdate(int delta)
         {
             WindowUpdateFrame windowUpdate = new WindowUpdateFrame(Id, delta);
-            _writeQueue.WriteFrameAsync(windowUpdate, Priority.Control, _cancel);
+            _writeQueue.WriteFrameAsync(windowUpdate, Priority.Control);
         }
 
         public virtual void Reset(ResetStatusCode statusCode)
@@ -144,7 +144,6 @@ namespace SharedProtocol
                 InputStream inputStream = (InputStream)_incomingStream;
                 inputStream.Abort(statusCode.ToString());
             }
-            _writeQueue.PurgeStream(Id);
 
             // Not disposing here because many of the resources may still be in use.
         }

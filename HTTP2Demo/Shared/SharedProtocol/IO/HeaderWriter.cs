@@ -23,9 +23,9 @@ namespace SharedProtocol.IO
         // TODO: In the next draft there will only be one or two overloads for this.
         public void WriteSynStream(IList<KeyValuePair<string, string>> headers, int streamId, Priority priority, bool isFin, CancellationToken cancel)
         {
+            cancel.ThrowIfCancellationRequested();
             // Lock because the compression context is shared across the whole connection.
             // We need to make sure requests are compressed and enqueued atomically.
-            // TODO: What about cancellation and queue purging? That would break decompression.
             // TODO: Prioritization re-ordering will also break decompression. Scrap the priority queue.
             lock (_compressionLock)
             {
@@ -35,16 +35,16 @@ namespace SharedProtocol.IO
                 frame.IsFin = isFin;
                 frame.Priority = priority;
 
-                _writeQueue.WriteFrameAsync(frame, priority, cancel);
+                _writeQueue.WriteFrameAsync(frame, priority);
             }
         }
 
         // TODO: In the next draft there will only be one or two overloads for this.
         public void WriteSynReply(IList<KeyValuePair<string, string>> headers, int streamId, Priority priority, bool isFin, CancellationToken cancel)
         {
+            cancel.ThrowIfCancellationRequested();
             // Lock because the compression context is shared across the whole connection.
             // We need to make sure requests are compressed and enqueued atomically.
-            // TODO: What about cancellation and queue purging? That would break decompression.
             // TODO: Prioritization re-ordering will also break decompression. Scrap the priority queue.
             lock (_compressionLock)
             {
@@ -53,16 +53,16 @@ namespace SharedProtocol.IO
                 SynReplyFrame frame = new SynReplyFrame(streamId, headerBytes);
                 frame.IsFin = isFin;
 
-                _writeQueue.WriteFrameAsync(frame, priority, cancel);
+                _writeQueue.WriteFrameAsync(frame, priority);
             }
         }
 
         // TODO: In the next draft there will only be one or two overloads for this.
         public void WriteHeaders(IList<KeyValuePair<string, string>> headers, int streamId, Priority priority, bool isFin, CancellationToken cancel)
         {
+            cancel.ThrowIfCancellationRequested();
             // Lock because the compression context is shared across the whole connection.
             // We need to make sure requests are compressed and enqueued atomically.
-            // TODO: What about cancellation and queue purging? That would break decompression.
             // TODO: Prioritization re-ordering will also break decompression. Scrap the priority queue.
             lock (_compressionLock)
             {
@@ -71,7 +71,7 @@ namespace SharedProtocol.IO
                 HeadersFrame frame = new HeadersFrame(streamId, headerBytes);
                 frame.IsFin = isFin;
 
-                _writeQueue.WriteFrameAsync(frame, priority, cancel);
+                _writeQueue.WriteFrameAsync(frame, priority);
             }
         }
 

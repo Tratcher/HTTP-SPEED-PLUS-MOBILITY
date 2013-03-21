@@ -66,26 +66,5 @@ namespace SharedProtocol.IO
                 return _queue.Count > 0;
             }
         }
-
-        public void PurgeStream(int id)
-        {
-            lock (_queueLock)
-            {
-                LinkedListNode<PriorityQueueEntry> here = _queue.First;
-                LinkedListNode<PriorityQueueEntry> next;
-                while (here != null)
-                {
-                    next = here.Next;
-                    if (!here.Value.IsFlush && FrameHelpers.GetStreamId(here.Value.Frame) == id
-                        // Never purge reset frames, those need to get through regardless.
-                        && !(here.Value.Frame is RstStreamFrame))
-                    {
-                        _queue.Remove(here);
-                    }
-
-                    here = next;
-                }
-            }
-        }
     }
 }

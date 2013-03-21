@@ -105,7 +105,7 @@ namespace ClientProtocol
         {
             DataFrame terminator = new DataFrame(_id);
             FinSent = true;
-            _writeQueue.WriteFrameAsync(terminator, _priority, _cancel);
+            _writeQueue.WriteFrameAsync(terminator, _priority);
         }
 
         private static void Cancel(object obj)
@@ -121,7 +121,7 @@ namespace ClientProtocol
                 {
                     RstStreamFrame reset = new RstStreamFrame(clientStream.Id, ResetStatusCode.Cancel);
                     clientStream.ResetSent = true;
-                    clientStream._writeQueue.WriteFrameAsync(reset, Priority.Control, CancellationToken.None);
+                    clientStream._writeQueue.WriteFrameAsync(reset, Priority.Control);
                 }
                 clientStream.Dispose();
             }

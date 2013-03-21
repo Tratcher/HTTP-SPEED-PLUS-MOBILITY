@@ -318,12 +318,11 @@ namespace ServerProtocol
             else if (ex != null)
             {
                 // TODO: trigger the CancellationToken?
-                _writeQueue.PurgeStream(Id);
                 if (!ResetSent)
                 {
                     RstStreamFrame reset = new RstStreamFrame(Id, ResetStatusCode.InternalError);
                     ResetSent = true;
-                    _writeQueue.WriteFrameAsync(reset, Priority.Control, CancellationToken.None);
+                    _writeQueue.WriteFrameAsync(reset, Priority.Control);
                 }
             }
             else
@@ -333,7 +332,7 @@ namespace ServerProtocol
                 {
                     DataFrame terminator = new DataFrame(_id);
                     FinSent = true;
-                    _writeQueue.WriteFrameAsync(terminator, _priority, CancellationToken.None);
+                    _writeQueue.WriteFrameAsync(terminator, _priority);
                 }
             }
             Dispose();
@@ -374,7 +373,7 @@ namespace ServerProtocol
                 // Note this may be put in the output queue after a successful response and FIN.
                 ResetSent = true;
                 RstStreamFrame reset = new RstStreamFrame(Id, ResetStatusCode.Cancel);
-                _writeQueue.WriteFrameAsync(reset, _priority, CancellationToken.None);
+                _writeQueue.WriteFrameAsync(reset, _priority);
             }
 
             _streamCancel.Dispose();

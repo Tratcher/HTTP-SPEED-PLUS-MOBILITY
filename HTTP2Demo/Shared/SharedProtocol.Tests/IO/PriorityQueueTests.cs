@@ -12,7 +12,7 @@ namespace SharedProtocol.IO.Tests
         {
             PriorityQueue queue = new PriorityQueue();
             Assert.False(queue.IsDataAvailable);
-            queue.Enqueue(new PriorityQueueEntry(Priority.Pri1, CancellationToken.None));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Pri1));
             Assert.True(queue.IsDataAvailable);
             
             PriorityQueueEntry output;
@@ -27,9 +27,9 @@ namespace SharedProtocol.IO.Tests
         {
             PriorityQueue queue = new PriorityQueue();
             Assert.False(queue.IsDataAvailable);
-            queue.Enqueue(new PriorityQueueEntry(Priority.Pri1, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(Priority.Pri3, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(Priority.Pri6, CancellationToken.None));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Pri1));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Pri3));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Pri6));
             Assert.True(queue.IsDataAvailable);
 
             PriorityQueueEntry output;
@@ -55,9 +55,9 @@ namespace SharedProtocol.IO.Tests
         {
             PriorityQueue queue = new PriorityQueue();
             Assert.False(queue.IsDataAvailable);
-            queue.Enqueue(new PriorityQueueEntry(Priority.Pri1, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(Priority.Ping, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(Priority.Pri3, CancellationToken.None));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Pri1));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Ping));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Pri3));
             Assert.True(queue.IsDataAvailable);
 
             PriorityQueueEntry output;
@@ -83,9 +83,9 @@ namespace SharedProtocol.IO.Tests
         {
             PriorityQueue queue = new PriorityQueue();
             Assert.False(queue.IsDataAvailable);
-            queue.Enqueue(new PriorityQueueEntry(Priority.Pri7, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(Priority.Pri4, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(Priority.Pri3, CancellationToken.None));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Pri7));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Pri4));
+            queue.Enqueue(new PriorityQueueEntry(Priority.Pri3));
             Assert.True(queue.IsDataAvailable);
 
             PriorityQueueEntry output;
@@ -111,9 +111,9 @@ namespace SharedProtocol.IO.Tests
         {
             PriorityQueue queue = new PriorityQueue();
             Assert.False(queue.IsDataAvailable);
-            queue.Enqueue(new PriorityQueueEntry(new DataFrame(1, new ArraySegment<byte>(new byte[1])), Priority.Pri1, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(new DataFrame(2, new ArraySegment<byte>(new byte[1])), Priority.Pri1, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(new DataFrame(3, new ArraySegment<byte>(new byte[1])), Priority.Pri1, CancellationToken.None));
+            queue.Enqueue(new PriorityQueueEntry(new DataFrame(1, new ArraySegment<byte>(new byte[1])), Priority.Pri1));
+            queue.Enqueue(new PriorityQueueEntry(new DataFrame(2, new ArraySegment<byte>(new byte[1])), Priority.Pri1));
+            queue.Enqueue(new PriorityQueueEntry(new DataFrame(3, new ArraySegment<byte>(new byte[1])), Priority.Pri1));
             Assert.True(queue.IsDataAvailable);
 
             PriorityQueueEntry output;
@@ -142,12 +142,12 @@ namespace SharedProtocol.IO.Tests
         {
             PriorityQueue queue = new PriorityQueue();
             Assert.False(queue.IsDataAvailable);
-            queue.Enqueue(new PriorityQueueEntry(new DataFrame(1, new ArraySegment<byte>(new byte[1])), Priority.Pri3, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(new DataFrame(1, new ArraySegment<byte>(new byte[1])), Priority.Pri1, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(new DataFrame(2, new ArraySegment<byte>(new byte[1])), Priority.Pri1, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(new DataFrame(2, new ArraySegment<byte>(new byte[1])), Priority.Pri3, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(new DataFrame(3, new ArraySegment<byte>(new byte[1])), Priority.Pri1, CancellationToken.None));
-            queue.Enqueue(new PriorityQueueEntry(new DataFrame(3, new ArraySegment<byte>(new byte[1])), Priority.Pri3, CancellationToken.None));
+            queue.Enqueue(new PriorityQueueEntry(new DataFrame(1, new ArraySegment<byte>(new byte[1])), Priority.Pri3));
+            queue.Enqueue(new PriorityQueueEntry(new DataFrame(1, new ArraySegment<byte>(new byte[1])), Priority.Pri1));
+            queue.Enqueue(new PriorityQueueEntry(new DataFrame(2, new ArraySegment<byte>(new byte[1])), Priority.Pri1));
+            queue.Enqueue(new PriorityQueueEntry(new DataFrame(2, new ArraySegment<byte>(new byte[1])), Priority.Pri3));
+            queue.Enqueue(new PriorityQueueEntry(new DataFrame(3, new ArraySegment<byte>(new byte[1])), Priority.Pri1));
+            queue.Enqueue(new PriorityQueueEntry(new DataFrame(3, new ArraySegment<byte>(new byte[1])), Priority.Pri3));
             Assert.True(queue.IsDataAvailable);
 
             PriorityQueueEntry output;

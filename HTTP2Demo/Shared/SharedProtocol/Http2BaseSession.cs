@@ -141,7 +141,7 @@ namespace SharedProtocol
             _nextPingId += 2;
             _currentPing = ping;
             PingFrame pingFrame = new PingFrame(_currentPing.Id);
-            _writeQueue.WriteFrameAsync(pingFrame, Priority.Ping, CancellationToken.None);
+            _writeQueue.WriteFrameAsync(pingFrame, Priority.Ping);
             return ping.Task;
         }
 
@@ -151,7 +151,7 @@ namespace SharedProtocol
             if (id % 2 != _nextPingId % 2)
             {
                 // Not one of ours, response ASAP
-                _writeQueue.WriteFrameAsync(new PingFrame(id), Priority.Ping, CancellationToken.None);
+                _writeQueue.WriteFrameAsync(new PingFrame(id), Priority.Ping);
                 return;
             }
 

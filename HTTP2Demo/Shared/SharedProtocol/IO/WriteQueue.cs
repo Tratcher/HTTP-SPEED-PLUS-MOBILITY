@@ -24,9 +24,9 @@ namespace SharedProtocol.IO
         }
 
         // Queue up a fully rendered frame to send
-        public Task WriteFrameAsync(Frame frame, Priority priority, CancellationToken cancel)
+        public Task WriteFrameAsync(Frame frame, Priority priority)
         {
-            PriorityQueueEntry entry = new PriorityQueueEntry(frame, priority, cancel);
+            PriorityQueueEntry entry = new PriorityQueueEntry(frame, priority);
             Enqueue(entry);
             SignalDataAvailable();
             return entry.Task;
@@ -34,14 +34,14 @@ namespace SharedProtocol.IO
 
         // Completes when any frames ahead of it have been processed
         // TODO: Have this only flush messages from one specific HTTP2Stream
-        public Task FlushAsync(/*int streamId, */ Priority priority, CancellationToken cancel)
+        public Task FlushAsync(/*int streamId, */ Priority priority)
         {
             if (!IsDataAvailable)
             {
                 return Task.FromResult<object>(null);
             }
 
-            PriorityQueueEntry entry = new PriorityQueueEntry(priority, cancel);
+            PriorityQueueEntry entry = new PriorityQueueEntry(priority);
             Enqueue(entry);
             SignalDataAvailable();
             return entry.Task;
@@ -73,12 +73,6 @@ namespace SharedProtocol.IO
                 PriorityQueueEntry entry;
                 while (TryDequeue(out entry))
                 {
-                    if (entry.CancellationToken.IsCancellationRequested)
-                    {
-                        entry.Cancel();
-                        continue;
-                    }
-
                     try
                     {
                         if (entry.IsFlush)
@@ -87,7 +81,7 @@ namespace SharedProtocol.IO
                         }
                         else
                         {
-                            await _stream.WriteAsync(entry.Buffer, 0, entry.Buffer.Length, entry.CancellationToken);
+                            await _stream.WriteAsync(entry.Buffer, 0, entry.Buffer.Length);
                         }
 
                         entry.Complete();
@@ -125,15 +119,6 @@ namespace SharedProtocol.IO
         {
             _disposed = true;
             _readWaitingForData.TrySetResult(null);
-        }
-
-        /// <summary>
-        /// Remove all outgoing frames with the given id. This stream has been reset.
-        /// </summary>
-        /// <param name="Id"></param>
-        public void PurgeStream(int id)
-        {
-            _messageQueue.PurgeStream(id);
         }
     }
 }

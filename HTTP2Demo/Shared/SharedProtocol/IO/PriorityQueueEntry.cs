@@ -9,24 +9,21 @@ namespace SharedProtocol.IO
     {
         private TaskCompletionSource<object> _tcs;
         private Frame _frame; // null for FlushAsync
-        private CancellationToken _cancel;
         private Priority _priority;
 
         // Flush
-        public PriorityQueueEntry(Priority priority, CancellationToken cancel)
+        public PriorityQueueEntry(Priority priority)
         {
             _frame = null;
             _priority = priority;
             _tcs = new TaskCompletionSource<object>();
-            _cancel = cancel;
         }
 
-        public PriorityQueueEntry(Frame frame, Priority priority, CancellationToken cancel)
+        public PriorityQueueEntry(Frame frame, Priority priority)
         {
             _frame = frame;
             _priority = priority;
             _tcs = new TaskCompletionSource<object>();
-            _cancel = cancel;
         }
 
         public Priority Priority { get { return _priority; } }
@@ -39,16 +36,9 @@ namespace SharedProtocol.IO
 
         public Task Task { get { return _tcs.Task; } }
 
-        public CancellationToken CancellationToken { get { return _cancel; } }
-
         internal void Complete()
         {
             _tcs.TrySetResult(null);
-        }
-
-        internal void Cancel()
-        {
-            _tcs.TrySetCanceled();
         }
 
         internal void Fail(Exception ex)

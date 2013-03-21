@@ -24,7 +24,7 @@ namespace ServerProtocol.Tests
             Task task = stream.Run(env => { throw new NotImplementedException(); });
             Assert.True(task.IsCompleted);
             Assert.False(task.IsFaulted);
-            writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
+            writeQueue.FlushAsync(Priority.Pri7).Wait();
 
             rawStream.Seek(0, SeekOrigin.Begin);
             FrameReader reader = new FrameReader(rawStream, true, CancellationToken.None);
@@ -56,7 +56,7 @@ namespace ServerProtocol.Tests
             });
             Assert.True(task.IsCompleted);
             Assert.False(task.IsFaulted);
-            writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
+            writeQueue.FlushAsync(Priority.Pri7).Wait();
 
             rawStream.Seek(0, SeekOrigin.Begin);
             FrameReader reader = new FrameReader(rawStream, true, CancellationToken.None);

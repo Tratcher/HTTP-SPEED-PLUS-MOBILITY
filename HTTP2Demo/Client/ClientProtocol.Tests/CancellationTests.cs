@@ -25,11 +25,11 @@ namespace ClientProtocol.Tests
             Http2ClientStream clientStream = new Http2ClientStream(1, Priority.Pri3, writeQueue, headerWriter, cts.Token);
             clientStream.StartRequest(GenerateHeaders(), 0, false);
             Task responseTask = clientStream.GetResponseAsync();
-            writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
+            writeQueue.FlushAsync(Priority.Pri7).Wait();
 
             cts.Cancel();
             Assert.True(responseTask.IsCanceled);
-            writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
+            writeQueue.FlushAsync(Priority.Pri7).Wait();
 
             rawStream.Seek(0, SeekOrigin.Begin);
             FrameReader reader = new FrameReader(rawStream, true, CancellationToken.None);
@@ -52,14 +52,14 @@ namespace ClientProtocol.Tests
             Http2ClientStream clientStream = new Http2ClientStream(1, Priority.Pri3, writeQueue, headerWriter, cts.Token);
             clientStream.StartRequest(GenerateHeaders(), 0, false);
             Task<IList<KeyValuePair<string, string>>> responseTask = clientStream.GetResponseAsync();
-            writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
+            writeQueue.FlushAsync(Priority.Pri7).Wait();
 
             clientStream.SetReply(GenerateHeaders(), false);
 
             var response = responseTask.Result;
 
             cts.Cancel();
-            writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
+            writeQueue.FlushAsync(Priority.Pri7).Wait();
 
             rawStream.Seek(0, SeekOrigin.Begin);
             FrameReader reader = new FrameReader(rawStream, true, CancellationToken.None);
@@ -82,14 +82,14 @@ namespace ClientProtocol.Tests
             Http2ClientStream clientStream = new Http2ClientStream(1, Priority.Pri3, writeQueue, headerWriter, cts.Token);
             clientStream.StartRequest(GenerateHeaders(), 0, false);
             Task<IList<KeyValuePair<string, string>>> responseTask = clientStream.GetResponseAsync();
-            writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
+            writeQueue.FlushAsync(Priority.Pri7).Wait();
 
             clientStream.SetReply(GenerateHeaders(), true);
 
             var response = responseTask.Result;
 
             cts.Cancel();
-            writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
+            writeQueue.FlushAsync(Priority.Pri7).Wait();
 
             rawStream.Seek(0, SeekOrigin.Begin);
             FrameReader reader = new FrameReader(rawStream, true, CancellationToken.None);
