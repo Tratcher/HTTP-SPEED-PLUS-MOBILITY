@@ -46,6 +46,7 @@
   <ItemGroup>
     <Compile Include="Compression\CompressionDictionary.cs" />
     <Compile Include="Compression\CompressionProcessor.cs" />
+    <Compile Include="IO\HeaderWriter.cs" />
     <Compile Include="Compression\ZOutputStreamExt.cs" />
     <Compile Include="Constants.cs" />
     <Compile Include="Credentials\CredentialManager.cs" />

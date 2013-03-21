@@ -39,6 +39,33 @@ namespace ProtocolIntegration.Tests
         }
 
         [Fact]
+        public Task SimpleStatusCodeResponseX2()
+        {
+            return RunSessionAsync(StatusCodeOnlyResponse, async (clientSession, serverSession) =>
+            {
+                IList<KeyValuePair<string, string>> requestPairs = GenerateHeaders("GET");
+                Http2ClientStream clientProtocolStream = clientSession.SendRequest(requestPairs, null, 3, false, CancellationToken.None);
+                IList<KeyValuePair<string, string>> responsePairs = await clientProtocolStream.GetResponseAsync();
+
+                Assert.Equal(2, responsePairs.Count);
+                Assert.True(responsePairs.Contains(new KeyValuePair<string, string>(":status", "201")));
+                Assert.True(responsePairs.Contains(new KeyValuePair<string, string>(":version", "HTTP/1.1")));
+                int read = clientProtocolStream.ResponseStream.Read(new byte[10], 0, 10);
+                Assert.Equal(0, read);
+                
+                requestPairs = GenerateHeaders("GET");
+                clientProtocolStream = clientSession.SendRequest(requestPairs, null, 3, false, CancellationToken.None);
+                responsePairs = await clientProtocolStream.GetResponseAsync();
+
+                Assert.Equal(2, responsePairs.Count);
+                Assert.True(responsePairs.Contains(new KeyValuePair<string, string>(":status", "201")));
+                Assert.True(responsePairs.Contains(new KeyValuePair<string, string>(":version", "HTTP/1.1")));
+                read = clientProtocolStream.ResponseStream.Read(new byte[10], 0, 10);
+                Assert.Equal(0, read);
+            });
+        }
+
+        [Fact]
         public Task HelloWorldResponse()
         {
             return RunSessionAsync(HelloWorldOnlyResponse, async (clientSession, serverSession) =>

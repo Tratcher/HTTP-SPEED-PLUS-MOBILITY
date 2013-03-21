@@ -5,8 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,14 +12,14 @@ namespace ClientProtocol
 {
     public class Http2ClientStream : Http2BaseStream
     {
-        private TaskCompletionSource<SynReplyFrame> _responseTask;
+        private TaskCompletionSource<IList<KeyValuePair<string, string>>> _responseTask;
         private CancellationTokenRegistration _cancellation;
 
-        public Http2ClientStream(int id, Priority priority, WriteQueue writeQueue, CancellationToken cancel)
-            : base(id, writeQueue, cancel)
+        public Http2ClientStream(int id, Priority priority, WriteQueue writeQueue, HeaderWriter headerWriter, CancellationToken cancel)
+            : base(id, writeQueue, headerWriter, cancel)
         {
             _priority = priority;
-            _responseTask = new TaskCompletionSource<SynReplyFrame>();
+            _responseTask = new TaskCompletionSource<IList<KeyValuePair<string, string>>>();
             _outputStream = new OutputStream(id, _priority, writeQueue);
             _cancellation = _cancel.Register(Cancel, this);
         }
@@ -66,33 +64,24 @@ namespace ClientProtocol
 
         public void StartRequest(IList<KeyValuePair<string, string>> pairs, int certIndex, bool hasRequestBody)
         {
-            // Serialize the request as a SynStreamFrame and submit it. (FIN if there is no body)
-            byte[] headerBytes = FrameHelpers.SerializeHeaderBlock(pairs);
-            headerBytes = Compressor.Compress(headerBytes);
-            SynStreamFrame frame = new SynStreamFrame(_id, headerBytes);
-            frame.CertClot = certIndex;
-            frame.Priority = _priority;
-
             // Set stream state
             if (!hasRequestBody)
             {
-                frame.IsFin = true;
                 FinSent = true;
             }
             RequestHeadersSent = true;
 
-            // Note that SynStreamFrames have to be sent in sequential ID order, so they're 
-            // put into the control priority queue.
-            _writeQueue.WriteFrameAsync(frame, Priority.Control, _cancel);
+            // TODO: Dropping cert index as it's removed in the next draft.
+            _headerWriter.WriteSynStream(pairs, _id, _priority, !hasRequestBody, _cancel);
         }
 
-        public void SetReply(SynReplyFrame frame)
+        public void SetReply(IList<KeyValuePair<string, string>> headers, bool isFin)
         {
             // May have been cancelled already
             if (!_responseTask.Task.IsCompleted)
             {
                 ResponseHeadersReceived = true;
-                if (frame.IsFin)
+                if (isFin)
                 {
                     FinReceived = true;
                     _incomingStream = Stream.Null;
@@ -102,18 +91,13 @@ namespace ClientProtocol
                     _incomingStream = new InputStream(Constants.DefaultFlowControlCredit, SendWindowUpdate); // TODO: Needs to handle flow control, send window updates.
                 }
                 // Dispatch, as TrySetResult will synchronously execute the waiters callback and block our message pump.
-                Task.Run(() => _responseTask.TrySetResult(frame));
+                Task.Run(() => _responseTask.TrySetResult(headers));
             }
         }
 
-        public async Task<IList<KeyValuePair<string, string>>> GetResponseAsync()
+        public Task<IList<KeyValuePair<string, string>>> GetResponseAsync()
         {
-            // Wait for and desterilize the response SynReplyFrame
-            SynReplyFrame responseFrame = await _responseTask.Task;
-            // Decompress and distribute headers
-            byte[] rawHeaders = Compressor.Decompress(responseFrame.CompressedHeaders);
-            IList<KeyValuePair<string, string>> pairs = FrameHelpers.DeserializeHeaderBlock(rawHeaders);
-            return pairs;
+            return _responseTask.Task;
         }
 
         // Send a Fin frame

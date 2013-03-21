@@ -19,9 +19,10 @@ namespace ClientProtocol.Tests
         {
             MemoryStream rawStream = new MemoryStream();
             WriteQueue writeQueue = new WriteQueue(rawStream);
+            HeaderWriter headerWriter = new HeaderWriter(writeQueue);
             Task pumpTask = writeQueue.PumpToStreamAsync();
             CancellationTokenSource cts = new CancellationTokenSource();
-            Http2ClientStream clientStream = new Http2ClientStream(1, Priority.Pri3, writeQueue, cts.Token);
+            Http2ClientStream clientStream = new Http2ClientStream(1, Priority.Pri3, writeQueue, headerWriter, cts.Token);
             clientStream.StartRequest(GenerateHeaders(), 0, false);
             Task responseTask = clientStream.GetResponseAsync();
             writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
@@ -45,15 +46,15 @@ namespace ClientProtocol.Tests
         {
             MemoryStream rawStream = new MemoryStream();
             WriteQueue writeQueue = new WriteQueue(rawStream);
+            HeaderWriter headerWriter = new HeaderWriter(writeQueue);
             Task pumpTask = writeQueue.PumpToStreamAsync();
             CancellationTokenSource cts = new CancellationTokenSource();
-            Http2ClientStream clientStream = new Http2ClientStream(1, Priority.Pri3, writeQueue, cts.Token);
+            Http2ClientStream clientStream = new Http2ClientStream(1, Priority.Pri3, writeQueue, headerWriter, cts.Token);
             clientStream.StartRequest(GenerateHeaders(), 0, false);
             Task<IList<KeyValuePair<string, string>>> responseTask = clientStream.GetResponseAsync();
             writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
 
-            SynReplyFrame reply = new SynReplyFrame(1, new CompressionProcessor().Compress(FrameHelpers.SerializeHeaderBlock(GenerateHeaders())));
-            clientStream.SetReply(reply);
+            clientStream.SetReply(GenerateHeaders(), false);
 
             var response = responseTask.Result;
 
@@ -75,16 +76,15 @@ namespace ClientProtocol.Tests
         {
             MemoryStream rawStream = new MemoryStream();
             WriteQueue writeQueue = new WriteQueue(rawStream);
+            HeaderWriter headerWriter = new HeaderWriter(writeQueue);
             Task pumpTask = writeQueue.PumpToStreamAsync();
             CancellationTokenSource cts = new CancellationTokenSource();
-            Http2ClientStream clientStream = new Http2ClientStream(1, Priority.Pri3, writeQueue, cts.Token);
+            Http2ClientStream clientStream = new Http2ClientStream(1, Priority.Pri3, writeQueue, headerWriter, cts.Token);
             clientStream.StartRequest(GenerateHeaders(), 0, false);
             Task<IList<KeyValuePair<string, string>>> responseTask = clientStream.GetResponseAsync();
             writeQueue.FlushAsync(Priority.Pri7, CancellationToken.None).Wait();
 
-            SynReplyFrame reply = new SynReplyFrame(1, new CompressionProcessor().Compress(FrameHelpers.SerializeHeaderBlock(GenerateHeaders())));
-            reply.IsFin = true;
-            clientStream.SetReply(reply);
+            clientStream.SetReply(GenerateHeaders(), true);
 
             var response = responseTask.Result;
 

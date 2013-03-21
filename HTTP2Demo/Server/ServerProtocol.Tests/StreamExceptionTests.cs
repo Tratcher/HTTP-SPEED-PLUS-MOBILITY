@@ -18,8 +18,9 @@ namespace ServerProtocol.Tests
         {
             MemoryStream rawStream = new MemoryStream();
             WriteQueue writeQueue = new WriteQueue(rawStream);
+            HeaderWriter headerWriter = new HeaderWriter(writeQueue);
             Task pumpTask = writeQueue.PumpToStreamAsync();
-            Http2ServerStream stream = new Http2ServerStream(1, new TransportInformation(), CreateEnvironment(), writeQueue, CancellationToken.None);
+            Http2ServerStream stream = new Http2ServerStream(1, new TransportInformation(), CreateEnvironment(), writeQueue, headerWriter, CancellationToken.None);
             Task task = stream.Run(env => { throw new NotImplementedException(); });
             Assert.True(task.IsCompleted);
             Assert.False(task.IsFaulted);
@@ -45,8 +46,9 @@ namespace ServerProtocol.Tests
         {
             MemoryStream rawStream = new MemoryStream();
             WriteQueue writeQueue = new WriteQueue(rawStream);
+            HeaderWriter headerWriter = new HeaderWriter(writeQueue);
             Task pumpTask = writeQueue.PumpToStreamAsync();
-            Http2ServerStream stream = new Http2ServerStream(1, new TransportInformation(), CreateEnvironment(), writeQueue, CancellationToken.None);
+            Http2ServerStream stream = new Http2ServerStream(1, new TransportInformation(), CreateEnvironment(), writeQueue, headerWriter, CancellationToken.None);
             Task task = stream.Run(env =>
             {
                 new OwinResponse(env).Write("Hello World");

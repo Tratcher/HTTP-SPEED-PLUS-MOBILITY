@@ -1,12 +1,11 @@
-﻿using SharedProtocol.Framing;
+﻿using SharedProtocol.Compression;
+using SharedProtocol.Framing;
 using SharedProtocol.IO;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,12 +23,20 @@ namespace SharedProtocol
         protected CancellationToken _cancel;
         protected bool _disposed;
         protected ISettingsManager _settingsManager;
+        protected HeaderWriter _headerWriter;
+        protected CompressionProcessor _decompressor;
 
         protected Http2BaseSession()
         {
             _goAwayReceived = false;
             _activeStreams = new ConcurrentDictionary<int, T>();
             _settingsManager = new EmptySettingsManager();
+            _decompressor = new CompressionProcessor();
+        }
+
+        protected CompressionProcessor Decompressor
+        {
+            get { return _decompressor; }
         }
 
         protected Task StartPumps()
@@ -94,7 +101,9 @@ namespace SharedProtocol
                     case ControlFrameType.Headers:
                         HeadersFrame headersFrame = (HeadersFrame)frame;
                         stream = GetStream(headersFrame.StreamId);
-                        stream.ReceiveExtraHeaders(headersFrame);
+                        byte[] decompressedHeaders = Decompressor.Decompress(headersFrame.CompressedHeaders);
+                        IList<KeyValuePair<string, string>> headers = FrameHelpers.DeserializeHeaderBlock(decompressedHeaders);
+                        stream.ReceiveExtraHeaders(headersFrame, headers);
                         break;
                     default:
                         throw new NotImplementedException(frame.FrameType.ToString());
@@ -190,6 +199,9 @@ namespace SharedProtocol
             {
                 _sessionStream.Dispose();
             }
+
+            _headerWriter.Dispose();
+            _decompressor.Dispose();
         }
     }
 }

@@ -1,13 +1,10 @@
 ﻿using SharedProtocol;
 using SharedProtocol.Framing;
 using SharedProtocol.IO;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
 using System.Security.Cryptography.X509Certificates;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -24,6 +21,7 @@ namespace ClientProtocol
             _cancel = cancel;
             _writeQueue = new WriteQueue(_sessionStream);
             _frameReader = new FrameReader(_sessionStream, true, _cancel);
+            _headerWriter = new HeaderWriter(_writeQueue);
 
             if (createHandshakeStream)
             {
@@ -48,7 +46,9 @@ namespace ClientProtocol
                     case ControlFrameType.SynReply:
                         SynReplyFrame synReply = (SynReplyFrame)frame;
                         stream = GetStream(synReply.StreamId);
-                        stream.SetReply(synReply);
+                        byte[] headerBytes = _decompressor.Decompress(synReply.CompressedHeaders);
+                        IList<KeyValuePair<string, string>> headers = FrameHelpers.DeserializeHeaderBlock(headerBytes);
+                        stream.SetReply(headers, synReply.IsFin);
                         break;
                     case ControlFrameType.RstStream:
                         RstStreamFrame resetFrame = (RstStreamFrame)frame;
@@ -88,7 +88,7 @@ namespace ClientProtocol
 
         private Http2ClientStream CreateStream(Priority priority, CancellationToken cancel)
         {
-            Http2ClientStream handshakeStream = new Http2ClientStream(GetNextId(), priority, _writeQueue, cancel);
+            Http2ClientStream handshakeStream = new Http2ClientStream(GetNextId(), priority, _writeQueue, _headerWriter, cancel);
             _activeStreams[handshakeStream.Id] = handshakeStream;
             return handshakeStream;
         }

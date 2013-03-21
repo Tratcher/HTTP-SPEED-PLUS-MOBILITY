@@ -39,6 +39,7 @@ namespace SharedProtocol.Compression
 	using System.IO;
     using System.Text;
 
+    // TODO: Split into a compressor and a decompressor
 	public class CompressionProcessor : IDisposable
 	{
 		private MemoryStream _memStreamCompression;
@@ -86,7 +87,6 @@ namespace SharedProtocol.Compression
             using (Stream inMemoryStream = new MemoryStream(inData))
             {
                 CopyStream(inMemoryStream, _compressOutZStream);
-                _compressOutZStream.finish();
                 outData = _memStreamCompression.ToArray();
                 ClearStream(_memStreamCompression, (int)_memStreamCompression.Length);
             }
@@ -124,7 +124,6 @@ namespace SharedProtocol.Compression
                 try
                 {
                     CopyStream(inMemoryStream, _decompressOutZStream);
-                    _decompressOutZStream.finish();
                 }
                 catch (ZStreamException)
                 {

@@ -25,12 +25,13 @@ namespace ServerProtocol
         private int _certSlot;
 
         private SynStreamFrame _synFrame;
+        private IList<KeyValuePair<string, string>> _requestHeaderPairs;
         private IDictionary<string, object> _upgradeEnvironment;
 
         private CancellationTokenSource _streamCancel;
         
-        private Http2ServerStream(int id, TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken sessionCancel)
-            : base(id, writeQueue, sessionCancel)
+        private Http2ServerStream(int id, TransportInformation transportInfo, WriteQueue writeQueue, HeaderWriter headerWriter, CancellationToken sessionCancel)
+            : base(id, writeQueue, headerWriter, sessionCancel)
         {
             _streamCancel = CancellationTokenSource.CreateLinkedTokenSource(sessionCancel);
             _cancel = _streamCancel.Token;
@@ -39,8 +40,8 @@ namespace ServerProtocol
 
         // For use with HTTP/1.1 upgrade handshakes
         public Http2ServerStream(int id, TransportInformation transportInfo, IDictionary<string, object> upgradeEnvironment,
-            WriteQueue writeQueue, CancellationToken sessionCancel)
-            : this(id, transportInfo, writeQueue, sessionCancel)
+            WriteQueue writeQueue, HeaderWriter headerWriter, CancellationToken sessionCancel)
+            : this(id, transportInfo, writeQueue, headerWriter, sessionCancel)
         {
             Contract.Assert(id == 1, "This constructor is only used for the initial HTTP/1.1 handshake request.");
             _upgradeEnvironment = upgradeEnvironment;
@@ -49,11 +50,12 @@ namespace ServerProtocol
         }
 
         // For use with incoming HTTP2 binary frames
-        public Http2ServerStream(SynStreamFrame synFrame, TransportInformation transportInfo, WriteQueue writeQueue, CancellationToken cancel)
-            : this(synFrame.StreamId, transportInfo, writeQueue, cancel)
+        public Http2ServerStream(SynStreamFrame synFrame, IList<KeyValuePair<string, string>> headerPairs, TransportInformation transportInfo, WriteQueue writeQueue, HeaderWriter headerWriter, CancellationToken cancel)
+            : this(synFrame.StreamId, transportInfo, writeQueue, headerWriter, cancel)
         {
             _synFrame = synFrame;
-            if (synFrame.IsFin)
+            _requestHeaderPairs = headerPairs;
+            if (_synFrame.IsFin)
             {
                 // Set stream state to request body complete and RST the stream if additional frames arrive.
                 FinReceived = true;
@@ -171,11 +173,8 @@ namespace ServerProtocol
             Contract.Assert(_synFrame != null);
 
             _owinRequest.Headers = new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
-            ArraySegment<byte> compressedHeaders = _synFrame.CompressedHeaders;
-            byte[] rawHeaders = _compressor.Decompress(compressedHeaders);
-            IList<KeyValuePair<string, string>> pairs = FrameHelpers.DeserializeHeaderBlock(rawHeaders);
    
-            foreach (KeyValuePair<string, string> pair in pairs)
+            foreach (KeyValuePair<string, string> pair in _requestHeaderPairs)
             {
                 if (pair.Key[0] == ':')
                 {
@@ -268,25 +267,20 @@ namespace ServerProtocol
                 // TODO: Fire OnSendingHeaders event
             }
 
-            byte[] headerBytes = SerializeResponseHeaders();
-            headerBytes = _compressor.Compress(headerBytes);
+            IList<KeyValuePair<string, string>> pairs = SerializeResponseHeaders();
 
-            // Prepare a SynReply frame and queue it
-            SynReplyFrame synFrame = new SynReplyFrame(_id, headerBytes);
             if (headersOnly)
             {
-                synFrame.IsFin = true;
                 FinSent = true;
             }
             ResponseHeadersSent = true;
 
-            // SynReplyFrames go in the control queue so they get sequenced properly with GoAway frames.
-            _writeQueue.WriteFrameAsync(synFrame, Priority.Control, CancellationToken.None);
+            _headerWriter.WriteSynReply(pairs, _id, _priority, headersOnly, _cancel);
 
             return true;
         }
 
-        private byte[] SerializeResponseHeaders()
+        private IList<KeyValuePair<string, string>> SerializeResponseHeaders()
         {
             IList<KeyValuePair<string, string>> pairs = new List<KeyValuePair<string, string>>();
 
@@ -306,7 +300,7 @@ namespace ServerProtocol
                     string.Join("\0", pair.Value)));
             }
 
-            return FrameHelpers.SerializeHeaderBlock(pairs);
+            return pairs;
         }
 
         private void EndResponse()

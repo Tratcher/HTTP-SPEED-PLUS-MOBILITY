@@ -42,6 +42,7 @@ namespace ServerProtocol
             _cancel = cancel;
             _writeQueue = new WriteQueue(_sessionStream);
             _frameReader = new FrameReader(_sessionStream, !handshakeHappened, _cancel);
+            _headerWriter = new HeaderWriter(_writeQueue);
 
             // Dispatch the original upgrade stream via _next;
             if (handshakeHappened)
@@ -57,7 +58,7 @@ namespace ServerProtocol
 
         private void DispatchInitialRequest()
         {
-            Http2ServerStream stream = new Http2ServerStream(1, _transportInfo, _upgradeRequest, _writeQueue, _cancel);
+            Http2ServerStream stream = new Http2ServerStream(1, _transportInfo, _upgradeRequest, _writeQueue, _headerWriter, _cancel);
 
             // GC the original
             _upgradeRequest = null;
@@ -92,7 +93,9 @@ namespace ServerProtocol
                     case ControlFrameType.SynStream:
                         SynStreamFrame synFrame = (SynStreamFrame)frame;
                         // TODO: Validate this stream ID is in the correct sequence and not already in use.
-                        Http2ServerStream stream = new Http2ServerStream(synFrame, _transportInfo, _writeQueue, _cancel);
+                        byte[] decompressedHeaders = Decompressor.Decompress(synFrame.CompressedHeaders);
+                        IList<KeyValuePair<string, string>> headers = FrameHelpers.DeserializeHeaderBlock(decompressedHeaders);
+                        Http2ServerStream stream = new Http2ServerStream(synFrame, headers, _transportInfo, _writeQueue, _headerWriter, _cancel);
                         DispatchNewStream(synFrame.StreamId, stream);
                         break;
 

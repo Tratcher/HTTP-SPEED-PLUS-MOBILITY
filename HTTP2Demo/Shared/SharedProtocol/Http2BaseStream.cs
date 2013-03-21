@@ -1,14 +1,10 @@
-﻿using SharedProtocol.Compression;
-using SharedProtocol.Framing;
+﻿using SharedProtocol.Framing;
 using SharedProtocol.IO;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 
 namespace SharedProtocol
 {
@@ -17,29 +13,24 @@ namespace SharedProtocol
         protected int _id;
         protected StreamState _state;
         protected WriteQueue _writeQueue;
-        protected CompressionProcessor _compressor;
         protected CancellationToken _cancel;
         protected int _version;
         protected Priority _priority;
         protected Stream _incomingStream;
         protected OutputStream _outputStream;
+        protected HeaderWriter _headerWriter;
 
-        protected Http2BaseStream(int id, WriteQueue writeQueue, CancellationToken cancel)
+        protected Http2BaseStream(int id, WriteQueue writeQueue, HeaderWriter headerWriter, CancellationToken cancel)
         {
             _id = id;
             _writeQueue = writeQueue;
             _cancel = cancel;
-            _compressor = new CompressionProcessor();
+            _headerWriter = headerWriter;
         }
 
         public int Id
         {
             get { return _id; }
-        }
-
-        protected CompressionProcessor Compressor
-        {
-            get { return _compressor; }
         }
 
         protected bool FinSent
@@ -104,31 +95,21 @@ namespace SharedProtocol
             // Assert the body is incomplete.
             Contract.Assert(!FinSent && !ResetSent && !ResetReceived);
 
-            byte[] headerBytes = FrameHelpers.SerializeHeaderBlock(headers);
-            headerBytes = Compressor.Compress(headerBytes);
-            HeadersFrame frame = new HeadersFrame(_id, headerBytes);
-            frame.IsFin = endOfMessage;
-
             // Set end-of-message state so we don't try to send an empty fin data frame.
             if (endOfMessage)
             {
                 FinSent = true;
             }
 
-            _writeQueue.WriteFrameAsync(frame, _priority, _cancel);
+            _headerWriter.WriteHeaders(headers, _id, _priority, endOfMessage, _cancel);
         }
 
-        public void ReceiveExtraHeaders(HeadersFrame headerFrame)
+        public void ReceiveExtraHeaders(HeadersFrame headerFrame, IList<KeyValuePair<string, string>> headers)
         {
             if (Disposed)
             {
                 return;
             }
-
-            // TODO: Can this be offloaded to a worker thread? We don't want to do busywork (like decompression) and block the message pump.
-            // Would that lead to potential ordering & concurrency issues? Ordering shouldn't be a problem because headers should stack.
-            byte[] headerBytes = Compressor.Decompress(headerFrame.CompressedHeaders);
-            IList<KeyValuePair<string, string>> headers = FrameHelpers.DeserializeHeaderBlock(headerBytes);
 
             // TODO: Where do we put them? How do we notify the stream owner that they're here?
 
@@ -178,8 +159,6 @@ namespace SharedProtocol
             Disposed = true;
             if (disposing)
             {
-                _compressor.Dispose();
-
                 if (_incomingStream != null)
                 {
                     _incomingStream.Dispose();
